@@ -73,7 +73,7 @@
   };
   home.sessionVariables = {
     XMODIFIERS = "@im=fcitx";
-    QT_IM_MODULE = "fcitx";
+    QT_IM_MODULE = "wayland";
     #GTK_IM_MODULE="fcitx";
   };
 }
