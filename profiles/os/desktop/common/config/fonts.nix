@@ -18,6 +18,9 @@
       lxgw-wenkai
       lxgw-neoxihei
       lxgw-wenkai-screen
+      source-han-sans
+      roboto
+      source-sans
       my-pkgs.fonts
     ];
     enableDefaultPackages = false;
