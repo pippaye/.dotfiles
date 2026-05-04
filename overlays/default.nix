@@ -8,6 +8,19 @@ let
     "--enable-wayland-ime"
     "--wayland-text-input-version=3"
   ];
+  fixWiresharkSrcHash =
+    pkgs: package:
+    package.overrideAttrs (
+      oldAttrs:
+      pkgs.lib.optionalAttrs ((oldAttrs.version or null) == "4.6.5") {
+        src = pkgs.fetchFromGitLab {
+          owner = "wireshark";
+          repo = "wireshark";
+          tag = "v${oldAttrs.version}";
+          hash = "sha256-Zvrwxjp4LK2J3QnxmPxKKrU01YHQvPyp54UWzeGNCjA=";
+        };
+      }
+    );
 in
 {
   # This one contains whatever you want to overlay
@@ -35,6 +48,9 @@ in
         hash = "sha256-ljp58wsKm2Ebb2mK9xf71nlrbckEkqMQHzVakQStFiM=";
       };
     });
+    wireshark = fixWiresharkSrcHash prev prev.wireshark;
+    wireshark-cli = fixWiresharkSrcHash prev prev.wireshark-cli;
+    tshark = final.wireshark-cli;
   });
   # FIXME jetbrains-mono: Failure on dependency with python313Packages.picosvg
   workaround = (
