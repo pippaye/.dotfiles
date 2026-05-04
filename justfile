@@ -2,7 +2,7 @@ default:
     just --list
 
 deploy-nixos:
-    sudo nixos-rebuild switch
+    sudo nixos-rebuild switch --flake $(pwd)#$(hostname)
 deploy-home:
     home-manager switch --flake "$(pwd)#$(id -un)@$(hostname)" -b bak
 deploy-both: deploy-nixos deploy-home
