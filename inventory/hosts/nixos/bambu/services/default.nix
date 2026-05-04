@@ -51,6 +51,7 @@
     recommendedProxySettings = true;
     recommendedGzipSettings = true;
     recommendedOptimisation = true;
+    clientMaxBodySize = "500m";
 
     virtualHosts."_" = {
       default = true;
