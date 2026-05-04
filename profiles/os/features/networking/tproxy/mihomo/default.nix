@@ -708,4 +708,5 @@ in
       RestrictAddressFamilies = "AF_INET AF_INET6 AF_NETLINK";
     };
   };
+  systemd.services.nscd.environmentenvironment.NSNCD_IGNORE_HOSTS = "true";
 }
