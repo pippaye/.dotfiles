@@ -1,8 +1,12 @@
 { config, lib, ... }:
+let
+  ctr0 = "red";
+  ctr1 = "azure";
+in
 {
-  systemd.nspawn."ubuntu-ml" = {
+  systemd.nspawn."${ctr0}" = {
     networkConfig = {
-      MACVLAN = "enp132s0:eth0";
+      MACVLAN = "lan0:eth0";
     };
     execConfig = {
       Boot = true;
@@ -12,7 +16,7 @@
         "LD_LIBRARY_PATH=/run/opengl-driver/lib:/run/opengl-driver-32/lib"
         "PATH=/run/current-system/sw/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
       ];
-      Hostname = "ubuntu-ml";
+      Hostname = "${ctr0}";
       ResolvConf = "bind-host";
     };
     filesConfig = {
@@ -34,7 +38,7 @@
     };
   };
 
-  systemd.services."systemd-nspawn@ubuntu-ml" = {
+  systemd.services."systemd-nspawn@${ctr0}" = {
     overrideStrategy = "asDropin";
     serviceConfig = {
       # Drop the template's -U (user namespace). It breaks writes to /etc/shadow
@@ -62,4 +66,27 @@
     };
     # wantedBy = [ "multi-user.target" ];
   };
+
+  systemd.nspawn."${ctr1}" = {
+    networkConfig = {
+      MACVLAN = "lan0:eth0";
+    };
+    execConfig = {
+      Boot = true;
+      PrivateUsers = false;
+      Capability = "all";
+      Environment = [
+        "PATH=/run/current-system/sw/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      ];
+      Hostname = "${ctr1}";
+      ResolvConf = "bind-host";
+    };
+    filesConfig = {
+      BindReadOnly = [
+        "/nix"
+        "/run/current-system/sw"
+      ];
+    };
+  };
+
 }
