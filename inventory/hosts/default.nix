@@ -25,13 +25,6 @@
     ];
     darwinConfig = ./darwin/mume;
   };
-  qingloong = {
-    role = "dog";
-    tags = [
-      "nixos"
-    ];
-    nixosConfig = ./nixos/qingloong;
-  };
   citrus = {
     role = "dog";
     tags = [
