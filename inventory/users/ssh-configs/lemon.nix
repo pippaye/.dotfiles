@@ -6,8 +6,6 @@
     serverAliveInterval = 60;
     serverAliveCountMax = 3;
     compression = true;
-    extraOptions = {
-      tcpKeepAlive = "yes";
-    };
+    TCPKeepAlive = "yes";
   };
 }

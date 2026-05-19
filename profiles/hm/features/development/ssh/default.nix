@@ -2,11 +2,9 @@
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
-    matchBlocks = {
+    settings = {
       "*" = {
-        setEnv = {
-          "TERM" = "xterm-256color";
-        };
+        setEnv = "TERM=xterm-256color";
       };
       "github.com" = {
         hostname = "ssh.github.com";

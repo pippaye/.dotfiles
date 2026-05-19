@@ -23,7 +23,7 @@
       ProxyJump jump-to-zhao.zju
   '';
   programs.ssh = {
-    matchBlocks = {
+    settings = {
       "zhang.zju" = {
         hostname = "10.98.36.162";
         user = "ubuntu";
@@ -37,9 +37,7 @@
         serverAliveInterval = 60;
         serverAliveCountMax = 3;
         compression = true;
-        extraOptions = {
-          TCPKeepAlive = "yes";
-        };
+        TCPKeepAlive = "yes";
       };
     };
     includes = [
