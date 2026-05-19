@@ -1,7 +1,7 @@
 { pkgs, ... }:
 {
   home.packages = with pkgs; [
-    swww
+    awww
   ];
   services.awww.enable = true;
   xdg.configFile."wallpapers" = {
@@ -13,7 +13,7 @@
     };
     Service = {
       Type = "oneshot";
-      Environment = "PATH=${pkgs.swww}/bin:${pkgs.bash}/bin:${pkgs.coreutils}/bin";
+      Environment = "PATH=${pkgs.awww}/bin:${pkgs.bash}/bin:${pkgs.coreutils}/bin";
       ExecStart = "${../../development/scripts/change-wallpaper.sh}";
     };
   };

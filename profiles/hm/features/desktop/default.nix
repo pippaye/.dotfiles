@@ -2,7 +2,7 @@
   imports = [
     ./niri
     ./swaylock_swayidle
-    ./swww
+    ./awww
     ./waybar
     ./wlogout
     ./clipboard.nix
