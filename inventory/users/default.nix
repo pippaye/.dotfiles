@@ -18,7 +18,6 @@ _: {
       "router"
       "cst"
     ];
-    # TODO fix it
     sshConfig = ./ssh-configs/bambu.nix;
     hmConfig = ./home-manager/bambu.nix;
   };
