@@ -1,7 +1,6 @@
 {
   config,
   pkgs,
-  inputs,
   lib,
   ...
 }:
@@ -32,23 +31,16 @@ in
     # ];
   };
   programs.swaylock.enable = true;
+  programs.swaylock.package = pkgs.swaylock-effects;
   programs.swaylock.settings = {
-    font = "FiraCode Nerd Font";
-    font-size = 50;
-    indicator-radius = 100;
-    indicator-thickness = 10;
-    # inside-color = "ffffff00";
-    # key-hl-color = "5e81ac";
-    # ring-color = "2e3440";
-    line-uses-ring = true;
-    # separator-color = "e5e9f022";
-    # text-color = "d8dee9ff";
-    # layout-text-color = "d8dee9ff";
-    # text-clear-color = "d8dee9ff";
-    # text-caps-lock-color = "d8dee9ff";
-    indicator-idle-visible = true;
+    show-failed-attempts = true;
     daemonize = true;
-    image = "${pkgs.my-pkgs.swaylock-background}/swaylock.jpg";
-    scaling = "fill";
+    screenshots = true;
+    clock = true;
+    indicator = true;
+    indicator-radius = 120;
+    indicator-thickness = 10;
+    effect-blur = "7x5";
+    effect-vignette = "0.5:0.5";
   };
 }

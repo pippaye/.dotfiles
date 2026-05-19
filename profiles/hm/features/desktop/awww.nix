@@ -1,4 +1,7 @@
-{ pkgs, ... }:
+{ pkgs, paths, ... }:
+let
+  changeWallpaper = "${paths.hmProfiles}/features/development/scripts/change-wallpaper.sh";
+in
 {
   home.packages = with pkgs; [
     awww
@@ -14,7 +17,7 @@
     Service = {
       Type = "oneshot";
       Environment = "PATH=${pkgs.awww}/bin:${pkgs.bash}/bin:${pkgs.coreutils}/bin";
-      ExecStart = "${../../development/scripts/change-wallpaper.sh}";
+      ExecStart = changeWallpaper;
     };
   };
   systemd.user.timers.change-wallpaper = {
