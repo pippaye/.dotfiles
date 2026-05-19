@@ -12,7 +12,7 @@ hosts: # lists of { hostname, domain, port }
       sopsFile = "${paths.secrets}/infra.yaml";
     };
   };
-  programs.ssh.matchBlocks =
+  programs.ssh.settings =
     hosts
     |> lib.map (
       {
