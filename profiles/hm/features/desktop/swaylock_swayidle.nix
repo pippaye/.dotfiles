@@ -14,7 +14,7 @@ in
     timeouts = [
       {
         timeout = 300;
-        command = "${lib.getExe pkgs.swaylock} -fF";
+        command = "${lib.getExe config.programs.swaylock.package} -fF";
       }
       # {
       #   timeout = 360;
