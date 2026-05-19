@@ -4,13 +4,9 @@
     url = "https://nix-blob.pippaye.top/fonts.zip";
     hash = "sha256-/1ryVz2fcIOftsUjPCuQI5zMmtNJE3g4AUf92Zwux8o=";
   };
-  swaylock-background = pkgs.callPackage ./my-swaylock-background.nix {
-    url = "https://nix-blob.pippaye.top/swaylock.jpg";
-    hash = "sha256-C5UuZeec+mGerebHffg+g8CNrOZd6OYG0LDnn56ldtE=";
-  };
   wallpapers = pkgs.callPackage ./my-wallpapers.nix {
     url = "https://nix-blob.pippaye.top/wallpapers.zip";
-    hash = "sha256-yqsICyzW692/Qa+n/IU6rjpjmgzeG7YP7HxHSuc1mes=";
+    hash = "sha256-fAluh/9f2MkxkPTGTzaycMWuAr0jh6bPZ2e9Itx94eY=";
   };
   zju-connect = pkgs.callPackage ./zju-connect.nix { };
   gnome-terminal = pkgs.callPackage ./gnome-terminal.nix { };
