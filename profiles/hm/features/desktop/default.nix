@@ -1,7 +1,7 @@
 {
   imports = [
     ./niri
-    ./swaylock_swayidle
+    ./swaylock_swayidle.nix
     ./awww
     ./waybar
     ./wlogout
