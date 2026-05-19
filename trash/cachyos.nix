@@ -6,17 +6,17 @@
   ...
 }:
 let
-  kernel_6_18_3 = pkgs.linux_6_18.override {
-    ignoreConfigErrors = true;
-    argsOverride = rec {
-      version = "6.18.3";
-      modDirVersion = version;
-      src = pkgs.fetchurl {
-        url = "mirror://kernel/linux/kernel/v6.x/linux-${version}.tar.xz";
-        hash = "sha256-eoh5FnuJxLrgd9bznE8hMHafBdva0qrZFK2rmvt9f5o=";
-      };
-    };
-  };
+  # kernel_6_18_3 = pkgs.linux_6_18.override {
+  #   ignoreConfigErrors = true;
+  #   argsOverride = rec {
+  #     version = "6.18.3";
+  #     modDirVersion = version;
+  #     src = pkgs.fetchurl {
+  #       url = "mirror://kernel/linux/kernel/v6.x/linux-${version}.tar.xz";
+  #       hash = "sha256-eoh5FnuJxLrgd9bznE8hMHafBdva0qrZFK2rmvt9f5o=";
+  #     };
+  #   };
+  # };
   linuxPackages_6_18_3 = pkgs.linuxPackagesFor kernel_6_18_3;
   # cachyosKernel = pkgs.cachyosKernels.linux-cachyos-bore-lto.override {
   #   pname = "my-cachyos";
@@ -85,23 +85,23 @@ in
       #     kernelPackages = linuxPackages_6_18_3;
       #   };
       # };
-      "nsdi-bore-6.18.3".configuration = {
-        boot = boot // {
-          kernelPackages = linuxPackages_6_18_3;
-          kernelPatches = [
-            {
-              name = "bore";
-              patch = pkgs.fetchpatch {
-                url = "https://raw.githubusercontent.com/firelzrd/bore-scheduler/178fd0a4bec8ad7b66facdee879602eb157c17a1/patches/stable/linux-6.18-bore/0001-linux6.18.3-bore-6.6.1.patch";
-                hash = "sha256-P4FeNqAPCzRqgTYvfhCovV93pFmx2hNtwUhl3cn12qM=";
-              };
-              structuredExtraConfig = {
-                SCHED_BORE = lib.kernel.yes;
-              };
-            }
-          ];
-        };
-      };
+      # "nsdi-bore-6.18.3".configuration = {
+      #   boot = boot // {
+      #     kernelPackages = linuxPackages_6_18_3;
+      #     kernelPatches = [
+      #       {
+      #         name = "bore";
+      #         patch = pkgs.fetchpatch {
+      #           url = "https://raw.githubusercontent.com/firelzrd/bore-scheduler/178fd0a4bec8ad7b66facdee879602eb157c17a1/patches/stable/linux-6.18-bore/0001-linux6.18.3-bore-6.6.1.patch";
+      #           hash = "sha256-P4FeNqAPCzRqgTYvfhCovV93pFmx2hNtwUhl3cn12qM=";
+      #         };
+      #         structuredExtraConfig = {
+      #           SCHED_BORE = lib.kernel.yes;
+      #         };
+      #       }
+      #     ];
+      #   };
+      # };
       # "nixos-lts".configuration = {
       #   boot.kernelPackages = pkgs.linuxPackages;
       # };
