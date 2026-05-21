@@ -1,7 +1,14 @@
-{ pkgs, ... }:
 {
-  environment.systemPackages = with pkgs; [
-    firefox
-    chromium
-  ];
+  pkgs,
+  lib,
+  isLinux,
+  ...
+}:
+{
+  environment.systemPackages =
+    with pkgs;
+    lib.optionals isLinux [
+      firefox
+      chromium
+    ];
 }
