@@ -12,6 +12,7 @@ let
     bark = ./bark.sh;
     tokenctl = ./tokenctl.sh;
     stash = ./stash.sh;
+    import_codex = ./import_codex.sh;
   };
 in
 {
