@@ -16,7 +16,7 @@ in
     "${hmProfiles}/features/llms/codex"
     "${hmProfiles}/features/llms/gemini"
     "${hmProfiles}/features/viewers/mpv"
-    "${hmProfiles}/features/viewers/zathura.nix"
+    # FIX "${hmProfiles}/features/viewers/zathura.nix"
     "${infra}/ssh"
   ];
   hmProfiles.dev.daily = true;
