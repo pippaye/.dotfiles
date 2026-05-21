@@ -78,6 +78,7 @@
       calc = "python3 -ic 'import math; from math import *'";
       cl = "claude";
       b = "bat";
+      cs = "cheatsheet";
     };
     initContent = builtins.readFile ./init_content.sh;
   };

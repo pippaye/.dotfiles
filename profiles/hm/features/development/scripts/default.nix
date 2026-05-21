@@ -13,6 +13,7 @@ let
     tokenctl = ./tokenctl.sh;
     stash = ./stash.sh;
     import_codex = ./import_codex.sh;
+    cheatsheet = ./cheatsheet.sh;
   };
 in
 {
