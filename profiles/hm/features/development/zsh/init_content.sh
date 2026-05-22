@@ -107,3 +107,37 @@ function pj_new {
 function iv {
   fd --type=file | fzf --multi --preview 'bat --color=always --style=numbers --line-range=:100 {}' | xargs vim
 }
+
+function gtc {
+    # 检查是否提供了仓库地址
+    if [ -z "$1" ]; then
+        echo "Usage: git_temp_clone <repository-url> [additional-git-clone-options]"
+        return 1
+    fi
+
+    local repo_url="$1"
+    shift # 移除第一个参数，方便将后续的参数传递给 git clone
+
+    # 创建临时目录（兼顾 macOS 和 Linux 的 mktemp 命令差异）
+    local temp_dir
+    temp_dir=$(mktemp -d 2>/dev/null || mktemp -d -t 'git-tmp')
+
+    if [ -z "$temp_dir" ] || [ ! -d "$temp_dir" ]; then
+        echo "Error: Failed to create temporary directory."
+        return 1
+    fi
+
+    echo "Created temporary directory: $temp_dir"
+
+    # 执行克隆操作，将仓库直接克隆到该临时目录下
+    if git clone "$repo_url" "$temp_dir" "$@"; then
+        # 克隆成功后进入该目录
+        cd "$temp_dir" || return 1
+        echo "Successfully cloned and entered: $temp_dir"
+    else
+        # 如果克隆失败，清理刚刚创建的临时目录
+        echo "Error: Git clone failed. Cleaning up temporary directory..."
+        rm -rf "$temp_dir"
+        return 1
+    fi
+}
