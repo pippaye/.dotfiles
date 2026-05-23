@@ -30,9 +30,9 @@
         port = 22;
       };
       "yu-sg.zju" = {
-        hostname = "143.198.205.199";
+        hostname = "174.138.25.112";
         user = "jiongchiyu";
-        port = 6666;
+        port = 6665;
         identityFile = config.sops.secrets.YU_SG_KEY.path;
         serverAliveInterval = 60;
         serverAliveCountMax = 3;
