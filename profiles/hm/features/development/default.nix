@@ -29,5 +29,6 @@ in
     ./zsh
     ./dnsctl
     ./scripts
+    ./python.nix
   ];
 }
