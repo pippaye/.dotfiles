@@ -31,7 +31,7 @@
       };
       "yu-sg.zju" = {
         hostname = "174.138.25.112";
-        user = "jiongchiyu";
+        user = "visitor";
         port = 6665;
         identityFile = config.sops.secrets.YU_SG_KEY.path;
         serverAliveInterval = 60;
