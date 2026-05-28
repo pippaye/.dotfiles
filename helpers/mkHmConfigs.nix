@@ -5,6 +5,7 @@
 }:
 {
   users,
+  hosts ? { },
   specialArgs,
   ...
 }:
@@ -15,12 +16,23 @@ users
     lib = inputs.nixpkgs.lib;
     splitFullyQualifiedUsername = import ./splitFullyQualifiedUsername.nix;
     inherit (splitFullyQualifiedUsername { inherit lib fullyQualifiedUserName; }) username hostname;
-    userInfo' = {
+    userInfoBase = {
       inherit username hostname;
       userid = fullyQualifiedUserName;
     }
     // userInfo;
-    system = userInfo.system or "x86_64-linux";
+    hostInfo =
+      if builtins.hasAttr userInfoBase.hostname hosts then
+        hosts.${userInfoBase.hostname}
+      else
+        { };
+    system =
+      userInfo.system or (
+        hostInfo.system or (
+          if builtins.elem "darwin" (hostInfo.tags or [ ]) then "aarch64-darwin" else "x86_64-linux"
+        )
+      );
+    userInfo' = userInfoBase // { inherit system; };
     isLinux = lib.strings.hasInfix "linux" system;
     isDarwin = lib.strings.hasInfix "darwin" system;
   in

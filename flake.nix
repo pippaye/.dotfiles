@@ -129,7 +129,7 @@
       };
       homeConfigurations = helpers.mkHmConfigs {
         inherit specialArgs;
-        inherit (inventory) users;
+        inherit (inventory) users hosts;
       };
       deploy = import ./infra/remote-deploy specialArgs;
       dnsctl = collectDnsctl {
