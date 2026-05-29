@@ -13,25 +13,31 @@ keys:
       - &ashenye_at_lemon age1g4l3g9c3vl3x70w6ja3ejtjw7qx0lpugyv9eksrrs8kcvxjmcsys85g4j3 # ashenye@lemon
       - &ashenye_at_yuzu age1r33ltlgkgyfqujaxvcyuh0vs5twn3wy9rmzcvn0jmzswpz4t9c6qc4xmzg
       - &ashenye_at_bambu age1ewexv87m2u6lmevwnwa0hqdk637ru43yk2zel3cs52r3f7u2r93s662vxu
+      - &ashenye_at_peach age1l5h6v8s9m7g5k0n2c8w4z5j3xq9r6f0a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6 # ashenye@peach
 creation_rules:
   - path_regex: ^secrets/default\.yaml$
     key_groups:
       - age:
           - *lan
+          - *peach
           - *mume
           - *ashenye_at_lan
           - *ashenye_at_mume
+          - *ashenye_at_peach
   - path_regex: ^secrets/zju\.yaml$
     key_groups:
       - age:
           - *lan
+          - *peach
           - *mume
           - *ashenye_at_lan
+          - *ashenye_at_peach
           - *ashenye_at_mume
   - path_regex: ^secrets/api-tokens\.yaml$
     key_groups:
       - age:
           - *lan
+          - *peach
           - *mume
           - *bambu
           - *ashenye_at_lan
@@ -40,26 +46,34 @@ creation_rules:
           - *ashenye_at_citrus
           - *ashenye_at_lemon
           - *ashenye_at_yuzu
+          - *ashenye_at_peach
   - path_regex: ^secrets/mihomo\.yaml$
     key_groups:
       - age:
           - *lan
           - *mume
           - *bambu
+          - *peach
   - path_regex: ^secrets/app-secrets\.yaml$
     key_groups:
       - age:
           - *lan
           - *mume
+          - *peach
   - path_regex: ^secrets/infra\.yaml$
     key_groups:
       - age:
           - *lan
           - *mume
           - *bambu
+          - *peach
           - *ashenye_at_lan
           - *ashenye_at_mume
   - path_regex: ^secrets/per-host/bambu/.*\.yaml$
     key_groups:
       - age:
           - *bambu
+  - path_regex: ^secrets/per-host/peach/.*\.yaml$
+    key_groups:
+      - age:
+          - *peach

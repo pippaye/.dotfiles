@@ -36,4 +36,11 @@ _: {
     tags = [ "vps" ];
     sshConfig = ./ssh-configs/yuzu.nix;
   };
+  "ashenye@peach" = {
+    role = "dog";
+    tags = [ "daily" ];
+    sshPubKey = "";
+    hmConfig = ./home-manager/peach.nix;
+    sshConfig = ./ssh-configs/peach.nix;
+  };
 }
