@@ -5,6 +5,7 @@ keys:
       - &citrus age1wk2gfxngsx73vcrftevqua0kjhlcpmcyuj55twhng38em38exeksyqhwgc
       - &yuzu age1mhfrq0rzz69m5t50xmeylp33s46pmva2vtytqlj7v2x3hc5a75jsqen6rf
       - &bambu age1uyr2r6hjsntpd38pnqzt496m2te55ujue2xzh25q8hhpfl33442qsn4h58
+      - &peach age10e9kadcyeqfruje92gxzax3mntxfzzqm6f64frz6hr0ns6c2d3rqu36l7c
   - users:
       - &ashenye_at_lan age18cwlfuth4jpz03u9wzwq5rxxxx50w9e0me9sjqt29dtra0xh33ss7xtfs5 # ashenye@lan
       - &ashenye_at_mume age1se6rw68dnwf6896j8r2v2vjf3kvm5l2x2220epdnm4k2xwzjee7qqj9hl8 # ashenye@mume
