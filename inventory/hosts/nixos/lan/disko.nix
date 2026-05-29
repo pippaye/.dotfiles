@@ -51,12 +51,6 @@
                     ];
                     mountpoint = "/home";
                   };
-                  "/home/ashenye" = {
-                    mountOptions = [
-                      "compress=zstd"
-                      "noatime"
-                    ];
-                  };
                   "/nix" = {
                     mountOptions = [
                       "compress=zstd"
@@ -64,7 +58,6 @@
                     ];
                     mountpoint = "/nix";
                   };
-                  # This subvolume will be created but not mounted
                 };
                 mountpoint = "/";
               };
