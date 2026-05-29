@@ -8,8 +8,7 @@
     disk = {
       main = {
         # TODO
-        device = "/dev/vda";
-        imageSize = "600G";
+        device = "/dev/disk/by-id/nvme-ZHITAI_PC005_Active_1TB_ZTA11T0JA2129503CT_1";
         type = "disk";
         content = {
           type = "gpt";
