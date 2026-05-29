@@ -65,4 +65,11 @@
     ];
     nixosConfig = ./nixos/bambu;
   };
+  peach = {
+    role = "dog";
+    tags = [
+      "nixos"
+    ];
+    nixosConfig = ./nixos/peach;
+  };
 }

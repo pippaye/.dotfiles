@@ -114,7 +114,9 @@
       in
       {
         formatter = pkgs.nixfmt;
-        packages = import ./packages { inherit pkgs inputs; };
+        packages = (import ./packages { inherit pkgs inputs; }) // {
+          image = self.nixosConfigurations.peach.config.system.build.diskoImages;
+        };
       }
     ))
     // rec {
