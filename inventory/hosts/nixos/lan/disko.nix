@@ -72,27 +72,6 @@
           };
         };
       };
-      zhitaipc005 = {
-        type = "disk";
-        device = "/dev/disk/by-id/nvme-ZHITAI_PC005_Active_1TB_ZTA11T0JA2129503CT";
-        content = {
-          type = "gpt";
-          partitions = {
-            root = {
-              size = "100%";
-              content = {
-                type = "btrfs";
-                extraArgs = [ "-f" ]; # Override existing partition
-                mountpoint = "/mnt/zhitaipc005";
-                mountOptions = [
-                  "compress=zstd"
-                  "noatime"
-                ];
-              };
-            };
-          };
-        };
-      };
     };
   };
 }
