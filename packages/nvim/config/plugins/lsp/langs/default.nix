@@ -9,5 +9,6 @@
     ./cmake.nix
     ./config-langs.nix
     ./php.nix
+    ./beancount.nix
   ];
 }
