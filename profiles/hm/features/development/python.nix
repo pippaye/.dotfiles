@@ -79,6 +79,9 @@ let
       pytest
       ruff
       black
+
+      beancount
+      fava
     ]
     ++ lib.optionals isLinux [
       imageio

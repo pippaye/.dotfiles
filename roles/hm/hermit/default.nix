@@ -18,7 +18,6 @@ in
     "${hmProfiles}/features/viewers/mpv"
     # FIX "${hmProfiles}/features/viewers/zathura.nix"
     "${infra}/ssh"
-    "${hmProfiles}/features/adhoc"
   ];
   hmProfiles.dev.daily = true;
   hmProfiles.dev.lite = false;
