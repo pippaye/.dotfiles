@@ -32,6 +32,7 @@ in
     "${hmProfiles}/features/viewers/imv.nix"
     "${hmProfiles}/features/viewers/zathura.nix"
     "${infra}/ssh"
+    "${hmProfiles}/features/adhoc"
   ];
   hmProfiles.dev.daily = true;
   hmProfiles.dev.lite = false;
