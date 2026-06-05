@@ -2,11 +2,14 @@
   pkgs,
   config,
   lib,
+  isLinux,
   ...
 }:
 let
   python = pkgs.python3.withPackages (
-    ps: with ps; [
+    ps:
+    with ps;
+    [
       # 基础
       ipython
       rich
@@ -52,7 +55,6 @@ let
 
       # 图像处理 / OCR 前处理
       pillow
-      imageio
       qrcode
 
       # 文本 / 格式
@@ -77,6 +79,9 @@ let
       pytest
       ruff
       black
+    ]
+    ++ lib.optionals isLinux [
+      imageio
     ]
   );
   cfg = config.hmProfiles.dev;
