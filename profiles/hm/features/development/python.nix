@@ -41,6 +41,7 @@ let
       pyarrow
       duckdb
       sqlalchemy
+      matplotlib
 
       # Excel / CSV / 表格
       openpyxl

@@ -5,7 +5,6 @@ let
 in
 {
   imports = [
-    "${osProfiles}/common/services/openssh.nix"
     "${osProfiles}/common/nix-settings/nix.nix"
     "${osProfiles}/preferences/std"
     "${osProfiles}/utils/std"
