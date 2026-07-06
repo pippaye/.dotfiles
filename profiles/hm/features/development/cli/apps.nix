@@ -18,12 +18,12 @@ in
         tlrc
         delta
         fzf
+        rclone
       ]
       ++ (lib.optionals (!cfg.lite) [
         yazi
         lazygit
         devenv
-        awscli2
         deploy-rs
         lazydocker
       ]);
