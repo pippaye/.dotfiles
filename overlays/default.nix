@@ -13,20 +13,30 @@ in
   # This one contains whatever you want to overlay
   # You can change versions, add patches, set compilation flags, anything really.
   # https://nixos.wiki/wiki/Overlays
-  modifications = final: prev: ({
-    vscode = prev.vscode.override {
-      commandLineArgs = electronArgs;
-    };
-    obsidian = prev.obsidian.override {
-      commandLineArgs = electronArgs;
-    };
-    qq = prev.qq.override {
-      commandLineArgs = electronArgs;
-    };
-    code-cursor = prev.code-cursor.override {
-      commandLineArgs = (builtins.concatStringsSep " " electronArgs);
-    };
-  });
+  modifications =
+    final: prev:
+    {
+      vscode = prev.vscode.override {
+        commandLineArgs = electronArgs;
+      };
+      obsidian = prev.obsidian.override {
+        commandLineArgs = electronArgs;
+      };
+      qq = prev.qq.override {
+        commandLineArgs = electronArgs;
+      };
+      code-cursor = prev.code-cursor.override {
+        commandLineArgs = (builtins.concatStringsSep " " electronArgs);
+      };
+    }
+    //
+      prev.lib.optionalAttrs (prev.stdenv.hostPlatform.isDarwin && prev.stdenv.hostPlatform.isAarch64)
+        {
+          # FIXIT
+          kitty = prev.kitty.overrideAttrs (old: {
+            patches = (old.patches or [ ]) ++ [ ./kitty-darwin-no-branch-protection.patch ];
+          });
+        };
   # FIXME jetbrains-mono: Failure on dependency with python313Packages.picosvg
   workaround = (
     final: prev: {
