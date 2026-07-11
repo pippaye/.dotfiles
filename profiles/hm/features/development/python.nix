@@ -6,7 +6,7 @@
   ...
 }:
 let
-  pythonWithBeanqueryWorkaround = pkgs.python3.override {
+  pythonWithBeanqueryWorkaround = pkgs.python313.override {
     packageOverrides = python-final: python-prev: {
       beanquery = python-prev.beanquery.overridePythonAttrs (oldAttrs: {
         # TODO : beanquery installs a top-level site-packages/docs directory.
@@ -17,6 +17,14 @@ let
         postInstall = (oldAttrs.postInstall or "") + ''
           rm -rf $out/${python-final.python.sitePackages}/docs
         '';
+      });
+      # FIXIT
+      pandas-stubs = python-prev.pandas-stubs.overridePythonAttrs (_: {
+        # This is a type-stub package; nixpkgs incorrectly checks `import pandas`
+        # without adding pandas as a runtime dependency.
+        pythonImportsCheck = [ ];
+        # The current pandas/NumPy dependency set is incompatible with its test suite.
+        doCheck = false;
       });
     };
   };
