@@ -1,6 +1,13 @@
-{ pkgs, ... }:
 {
-  home.packages = with pkgs; [
-    qbittorrent-enhanced
-  ];
+  pkgs,
+  isLinux,
+  lib,
+  ...
+}:
+{
+  home.packages =
+    with pkgs;
+    lib.optionals isLinux [
+      qbittorrent-enhanced
+    ];
 }
