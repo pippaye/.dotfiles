@@ -1,12 +1,13 @@
 --- a/setup.py
 +++ b/setup.py
-@@ -607,8 +607,7 @@ def init_env(
+@@ -607,8 +607,8 @@ def init_env(
      elif ba.isa == ISA.ARM64:
          # Using -mbranch-protection=standard causes crashes on Linux ARM, reported
          # in https://github.com/kovidgoyal/kitty/issues/6845#issuecomment-1835886938
 -        if is_macos:
 -            control_flow_protection = '-mbranch-protection=standard'
 +        # Nix's cctools ld currently crashes while linking glfw-cocoa with this flag.
++        control_flow_protection = ''
  
      if control_flow_protection:
          cflags.append(control_flow_protection)

@@ -33,9 +33,19 @@ in
       prev.lib.optionalAttrs (prev.stdenv.hostPlatform.isDarwin && prev.stdenv.hostPlatform.isAarch64)
         {
           # FIXIT
-          kitty = prev.kitty.overrideAttrs (old: {
-            patches = (old.patches or [ ]) ++ [ ./kitty-darwin-no-branch-protection.patch ];
-          });
+      kitty = prev.kitty.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ [ ./kitty-darwin-no-branch-protection.patch ];
+        nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ prev.llvmPackages.lld ];
+        env = (old.env or { }) // {
+          NIX_CFLAGS_LINK = "-fuse-ld=lld";
+        };
+      });
+      starship = prev.starship.overrideAttrs (old: {
+        nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ prev.llvmPackages.lld ];
+        env = (old.env or { }) // {
+          NIX_CFLAGS_LINK = (old.env.NIX_CFLAGS_LINK or "") + " -fuse-ld=lld";
+        };
+      });
         };
   # FIXME jetbrains-mono: Failure on dependency with python313Packages.picosvg
   workaround = (
