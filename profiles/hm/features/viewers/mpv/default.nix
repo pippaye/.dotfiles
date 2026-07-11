@@ -6,7 +6,8 @@
 }:
 {
   programs.mpv = {
-    enable = true;
+    # FIXIT
+    enable = isLinux;
     package = pkgs.mpv.override {
       mpv-unwrapped = pkgs.mpv-unwrapped.override {
         vapoursynthSupport = true;
