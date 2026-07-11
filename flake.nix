@@ -11,12 +11,17 @@
     nixvim = {
       url = "github:nix-community/nixvim/main?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.systems.follows = "systems";
     };
     home-manager = {
       url = "github:nix-community/home-manager?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    stylix.url = "github:nix-community/stylix?shallow=1";
+    stylix = {
+      url = "github:nix-community/stylix?shallow=1";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.systems.follows = "systems";
+    };
     nur = {
       url = "github:nix-community/NUR?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -38,6 +43,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-utils.url = "github:numtide/flake-utils?shallow=1";
+    systems.url = "github:nix-systems/default/future-26.11";
     vscode-server.url = "github:nix-community/nixos-vscode-server?shallow=1";
     deploy-rs.url = "github:serokell/deploy-rs?shallow=1";
     microvm = {
@@ -49,6 +55,7 @@
     dnsctl-nix = {
       url = "github:pippaye/dnsctl.nix?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.bun2nix.inputs.systems.follows = "systems";
     };
     lazydc = {
       url = "github:pippaye/lazydc?shallow=1";
@@ -106,8 +113,9 @@
         inherit specialArgs;
       };
       inherit (specialArgs) helpers inventory;
+      supportedSystems = import inputs.systems;
     in
-    (flake-utils.lib.eachDefaultSystem (
+    (flake-utils.lib.eachSystem supportedSystems (
       system:
       let
         pkgs = nixpkgs.legacyPackages."${system}";
