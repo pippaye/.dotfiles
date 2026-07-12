@@ -1,4 +1,4 @@
-{
+{ lib, isDarwin, ... }: {
   programs.zsh = {
     enable = true;
     enableCompletion = true;
@@ -80,7 +80,14 @@
       b = "bat";
       cs = "cheatsheet";
     };
-    initContent = builtins.readFile ./init_content.sh;
+    initContent = lib.concatStrings (
+      [ (builtins.readFile ./init_content.sh) ]
+      ++ (lib.optionals isDarwin [
+        ''
+          eval "$(/opt/homebrew/bin/brew shellenv)"
+        ''
+      ])
+    );
   };
   programs.starship = {
     enable = true;

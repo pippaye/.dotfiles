@@ -10,5 +10,6 @@ in
     "${osProfiles}/utils/std"
     "${osProfiles}/nix/garbage-collector.nix"
     "${osProfiles}/nix/nix-index.nix"
+    ./adhoc.nix
   ];
 }
