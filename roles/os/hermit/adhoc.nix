@@ -58,7 +58,8 @@
 
       "obsidian"
       "typora"
-      "xournal++"
+      "drawio"
+      # "xournal++"
       "zotero"
       "gimp"
       "codex"
@@ -72,6 +73,7 @@
       {
         name = "flclash";
       }
+      "pinta"
     ];
   };
 }
