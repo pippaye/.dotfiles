@@ -26,6 +26,12 @@ in
         devenv
         deploy-rs
         lazydocker
+        imagemagick
+        mozjpeg
+        pngquant
+        oxipng
+        libwebp
+        libavif
       ]);
   };
 }
