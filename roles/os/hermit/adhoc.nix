@@ -1,6 +1,6 @@
 {
   homebrew = {
-    enable = false;
+    enable = true;
 
     onActivation = {
       autoUpdate = true; # Fetch the newest stable branch of Homebrew's git repo
