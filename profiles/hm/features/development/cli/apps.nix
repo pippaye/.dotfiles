@@ -32,6 +32,7 @@ in
         oxipng
         libwebp
         libavif
+        glow
       ]);
   };
 }
