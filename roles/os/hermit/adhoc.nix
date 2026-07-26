@@ -74,6 +74,7 @@
         name = "flclash";
       }
       "pinta"
+      "obs"
     ];
   };
 }
