@@ -71,8 +71,8 @@ fzf_cmd() {
   find_command fzf || die "missing dependency: fzf"
 }
 
-bat_cmd() {
-  find_command bat batcat || die "missing dependency: bat or batcat"
+glow_cmd() {
+  find_command glow || die "missing dependency: glow"
 }
 
 list_files() {
@@ -123,11 +123,11 @@ strip_frontmatter() {
 show_file() {
   local root="$1"
   local rel="$2"
-  local bat="$3"
+  local glow="$3"
   local file="$root/$rel"
 
   [[ -f "$file" ]] || die "not a file: $file"
-  strip_frontmatter "$file" | "$bat" --language markdown --paging always --style plain
+  strip_frontmatter "$file" | "$glow" --pager -
 }
 
 absolute_path() {
@@ -155,7 +155,7 @@ choose_match() {
 }
 
 main() {
-  local root fd fzf bat matches rel
+  local root fd fzf glow matches rel
 
   case "${1:-}" in
     -h|--help)
@@ -170,9 +170,9 @@ main() {
   case "$#" in
     0)
       fzf="$(fzf_cmd)"
-      bat="$(bat_cmd)"
+      glow="$(glow_cmd)"
       rel="$(select_file "$root" "$fd" "$fzf")" || return 1
-      show_file "$root" "$rel" "$bat"
+      show_file "$root" "$rel" "$glow"
       ;;
     1)
       case "$1" in
@@ -189,8 +189,8 @@ main() {
         *)
           matches="$(find_by_name "$root" "$fd" "$1")"
           rel="$(choose_match "$matches" "matches> ")" || die "no cheatsheet found: $1"
-          bat="$(bat_cmd)"
-          show_file "$root" "$rel" "$bat"
+          glow="$(glow_cmd)"
+          show_file "$root" "$rel" "$glow"
           ;;
       esac
       ;;
