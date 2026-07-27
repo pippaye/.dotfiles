@@ -36,6 +36,7 @@ in
     home.packages = [
       pkgs.playwright-mcp
       pkgs.mcp-nixos
+      pkgs.nodejs
     ];
   };
 }
