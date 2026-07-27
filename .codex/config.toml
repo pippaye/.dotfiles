@@ -1,3 +1,3 @@
-[mcp_servers.nixos]
-command = "nix"
-args = ["run", "github:utensils/mcp-nixos", "--"]
+[mcp_servers.nixos-mcp]
+args = ["--"]
+command = "mcp-nixos"
