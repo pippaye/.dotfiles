@@ -35,6 +35,7 @@ in
   config = lib.mkIf cfg.daily {
     home.packages = [
       pkgs.playwright-mcp
+      pkgs.mcp-nixos
     ];
   };
 }
