@@ -31,4 +31,10 @@ in
     ./scripts
     ./python.nix
   ];
+
+  config = lib.mkIf cfg.daily {
+    home.packages = [
+      pkgs.playwright-mcp
+    ];
+  };
 }
