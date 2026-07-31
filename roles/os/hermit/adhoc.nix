@@ -37,6 +37,7 @@
     # TODO Feel free to add your favorite apps here.
     brews = [
       "mas"
+      "openssl@3"
     ];
 
     # `brew install --cask`

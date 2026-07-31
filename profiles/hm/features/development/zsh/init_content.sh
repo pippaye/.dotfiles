@@ -141,3 +141,5 @@ function gtc {
         return 1
     fi
 }
+
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
