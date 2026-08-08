@@ -18,6 +18,12 @@ let
           rm -rf $out/${python-final.python.sitePackages}/docs
         '';
       });
+      jupyter-server = python-prev.jupyter-server.overridePythonAttrs (oldAttrs: {
+        # This asynchronous kernel cleanup test intermittently times out on Darwin.
+        disabledTests = (oldAttrs.disabledTests or [ ]) ++ [
+          "test_disconnect_resolves_orphaned_kernel_info_future"
+        ];
+      });
       # FIXIT
       pandas-stubs = python-prev.pandas-stubs.overridePythonAttrs (_: {
         # This is a type-stub package; nixpkgs incorrectly checks `import pandas`
