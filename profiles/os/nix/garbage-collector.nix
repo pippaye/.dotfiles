@@ -12,6 +12,7 @@
     else if isDarwin then
       {
         automatic = true;
+        options = "--delete-older-than 7d";
       }
     else
       throw "garbage-collector.nix: Unsupported platform";
