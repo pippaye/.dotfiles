@@ -14,6 +14,7 @@ let
     stash = ./stash.sh;
     import_codex = ./import_codex.sh;
     cheatsheet = ./cheatsheet.sh;
+    ghpm = ./ghpm.py;
   };
 in
 {
