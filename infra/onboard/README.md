@@ -4,6 +4,8 @@ This repository wires NixOS hosts through `inventory/hosts`, `roles/os`, and hos
 
 Use `infra/onboard/template/` as the **minimum remote-connectable** starter set.
 
+For the complete VPS runbook, including low-memory remote builds, bootstrap cleanup, Docker/DNS/ACME, SOPS, and Home Manager activation, see [`vps.md`](./vps.md).
+
 ## Stage 0: Minimal inventory + template (for remote install)
 
 Goal: prepare the smallest set of files to let `nixos-anywhere` install a bootable NixOS with SSH access.

@@ -14,6 +14,7 @@ keys:
       - &ashenye_at_yuzu age1r33ltlgkgyfqujaxvcyuh0vs5twn3wy9rmzcvn0jmzswpz4t9c6qc4xmzg
       - &ashenye_at_bambu age1ewexv87m2u6lmevwnwa0hqdk637ru43yk2zel3cs52r3f7u2r93s662vxu
       - &ashenye_at_peach age10e9kadcyeqfruje92gxzax3mntxfzzqm6f64frz6hr0ns6c2d3rqu36l7c # ashenye@peach
+      - &ashenye_at_lime age1ylwmymkx7vzjw9mx2kuwnjzlkrf7wj54gkj0rg3f9c43lqsd5gustdjxam # ashenye@lime
 creation_rules:
   - path_regex: ^secrets/default\.yaml$
     key_groups:
@@ -24,6 +25,7 @@ creation_rules:
           - *ashenye_at_lan
           - *ashenye_at_mume
           - *ashenye_at_peach
+          - *ashenye_at_lime
   - path_regex: ^secrets/zju\.yaml$
     key_groups:
       - age:
@@ -47,6 +49,7 @@ creation_rules:
           - *ashenye_at_lemon
           - *ashenye_at_yuzu
           - *ashenye_at_peach
+          - *ashenye_at_lime
   - path_regex: ^secrets/mihomo\.yaml$
     key_groups:
       - age:

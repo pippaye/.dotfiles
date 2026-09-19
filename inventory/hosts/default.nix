@@ -72,4 +72,12 @@
     ];
     nixosConfig = ./nixos/peach;
   };
+  lime = {
+    role = "dog";
+    tags = [
+      "nixos"
+      "vps"
+    ];
+    nixosConfig = ./nixos/lime;
+  };
 }
