@@ -39,6 +39,28 @@ in
         env = (old.env or { }) // {
           NIX_CFLAGS_LINK = "-fuse-ld=lld";
         };
+        # Fix macOS notifications (kitten notify / notify_on_cmd_finish).
+        # The real GUI process is Contents/MacOS/.kitty-wrapped (exec'd by the
+        # makeBinaryWrapper shim), and autoSignDarwinBinariesHook ad-hoc signs it
+        # with identifier ".kitty-wrapped". usernotificationsd then rejects it
+        # because the signing identifier != bundle id "net.kovidgoyal.kitty"
+        # (UNErrorDomain error 1). Re-sign it with the bundle id *after* the
+        # auto-sign hook (which also lives in postFixupHooks, registered earlier).
+        # Must be done at build time: the copied app in ~/Applications execs the
+        # store copy of .kitty-wrapped, so re-signing the copy has no effect.
+        postInstall = (old.postInstall or "") + ''
+          _kittyResignWithBundleId() {
+            local f="$out/Applications/kitty.app/Contents/MacOS/.kitty-wrapped"
+            local tmp
+            tmp=$(mktemp -d)
+            # sign a fresh copy: the binary was already executed during the build
+            cp "$f" "$tmp/"
+            ${prev.darwin.sigtool}/bin/codesign -f -s - -i net.kovidgoyal.kitty "$tmp/.kitty-wrapped"
+            mv "$tmp/.kitty-wrapped" "$f"
+            rmdir "$tmp"
+          }
+          postFixupHooks+=(_kittyResignWithBundleId)
+        '';
       });
       starship = prev.starship.overrideAttrs (old: {
         nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ prev.llvmPackages.lld ];

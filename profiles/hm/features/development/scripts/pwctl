@@ -1,0 +1,517 @@
+#!/usr/bin/env bash
+# pwctl — a human-friendly CLI password manager
+# Pure bash wrapper around sops + age
+# Vault is a flat sops-encrypted YAML: key (plaintext) → value (encrypted)
+
+set -euo pipefail
+
+# ─── Constants ────────────────────────────────────────────────────────────────
+
+PWCTL_VERSION="0.1.0"
+
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+
+PWCTL_CONFIG_DIR="${XDG_CONFIG_HOME}/pwctl"
+PWCTL_DATA_DIR="${XDG_DATA_HOME}/pwctl"
+PWCTL_CONFIG_FILE="${PWCTL_CONFIG_DIR}/config"
+
+# Defaults (overridable via config file)
+PWCTL_VAULT="${PWCTL_DATA_DIR}/vault.yaml"
+PWCTL_CLIP_TIMEOUT=30
+PWCTL_GEN_LENGTH=20
+PWCTL_GEN_SYMBOLS=true
+
+# ─── Colors ───────────────────────────────────────────────────────────────────
+
+if [[ -t 1 ]]; then
+  RED=$'\e[31m'; GREEN=$'\e[32m'; YELLOW=$'\e[33m'
+  BLUE=$'\e[34m'; CYAN=$'\e[36m'; BOLD=$'\e[1m'; DIM=$'\e[2m'; RESET=$'\e[0m'
+else
+  RED=''; GREEN=''; YELLOW=''; BLUE=''; CYAN=''; BOLD=''; DIM=''; RESET=''
+fi
+
+# ─── Logging ──────────────────────────────────────────────────────────────────
+
+info()   { printf "${GREEN}✅  %s${RESET}\n" "$*"; }
+warn()   { printf "${YELLOW}⚠️   %s${RESET}\n" "$*"; }
+err()    { printf "${RED}❌  %s${RESET}\n" "$*" >&2; }
+die()    { err "$*"; exit 1; }
+header() { printf "\n${BOLD}${BLUE}%s${RESET}\n" "$*"; }
+dim()    { printf "${DIM}%s${RESET}\n" "$*"; }
+
+# ─── Load config ──────────────────────────────────────────────────────────────
+
+[[ -f "$PWCTL_CONFIG_FILE" ]] && source "$PWCTL_CONFIG_FILE"
+
+# ─── Clipboard ────────────────────────────────────────────────────────────────
+
+_clip_copy() {
+  if [[ "$OSTYPE" == darwin* ]]; then
+    pbcopy
+  elif [[ -n "${WAYLAND_DISPLAY:-}" ]]; then
+    wl-copy
+  elif command -v xclip &>/dev/null; then
+    xclip -selection clipboard
+  elif command -v xsel &>/dev/null; then
+    xsel --clipboard --input
+  else
+    die "No clipboard tool found. Install wl-clipboard (Wayland) or xclip (X11)."
+  fi
+}
+
+_clip_clear() {
+  if [[ "$OSTYPE" == darwin* ]]; then
+    echo -n "" | pbcopy
+  elif [[ -n "${WAYLAND_DISPLAY:-}" ]]; then
+    wl-copy --clear
+  elif command -v xclip &>/dev/null; then
+    echo -n "" | xclip -selection clipboard
+  elif command -v xsel &>/dev/null; then
+    echo -n "" | xsel --clipboard --input
+  fi
+}
+
+_clip() {
+  local secret="$1" label="${2:-value}"
+  printf '%s' "$secret" | _clip_copy
+  info "${label} copied to clipboard — clears in ${PWCTL_CLIP_TIMEOUT}s"
+  ( sleep "$PWCTL_CLIP_TIMEOUT" && _clip_clear ) &
+  disown
+}
+
+# ─── Deps check ───────────────────────────────────────────────────────────────
+
+_check_deps() {
+  local missing=()
+  for cmd in sops fzf; do
+    command -v "$cmd" &>/dev/null || missing+=("$cmd")
+  done
+  (( ${#missing[@]} == 0 )) || die "Missing dependencies: ${missing[*]}"
+}
+
+# ─── Vault helpers ────────────────────────────────────────────────────────────
+
+_require_vault() {
+  [[ -f "$PWCTL_VAULT" ]] || die "Vault not found. Run: pwctl init"
+}
+
+# List all keys — no decryption needed, keys are plaintext in sops yaml
+_vault_keys() {
+  grep -v '^sops:' "$PWCTL_VAULT" \
+    | grep -E '^[a-zA-Z0-9_/. -]+:' \
+    | sed 's/:.*//' \
+    | sed 's/[[:space:]]*$//' \
+    | grep -v '^_pwctl_init$'
+}
+
+_key_exists() {
+  _vault_keys | grep -qx "$1"
+}
+
+# Get decrypted value for a key
+_vault_get() {
+  local key="$1"
+  sops --decrypt --extract "[\"${key}\"]" "$PWCTL_VAULT"
+}
+
+# Set a key/value (encrypts in place)
+_vault_set() {
+  local key="$1" value="$2"
+  sops --set "[\"${key}\"] \"${value}\"" "$PWCTL_VAULT"
+}
+
+# ─── fzf key picker ───────────────────────────────────────────────────────────
+
+# Pick a key interactively; prints selected key or returns 1 if cancelled
+_pick_key() {
+  local prompt="${1:-  🔑  }"
+  _vault_keys | fzf \
+    --prompt="$prompt" \
+    --layout=reverse \
+    --border=rounded \
+    --height=40% \
+    2>/dev/null
+}
+
+# ─── Password generator ───────────────────────────────────────────────────────
+
+_gen_password() {
+  local length="${1:-$PWCTL_GEN_LENGTH}"
+  local symbols="${2:-$PWCTL_GEN_SYMBOLS}"
+  if [[ "$symbols" == true ]]; then
+    LC_ALL=C tr -dc 'A-Za-z0-9!@#$%^&*()_+-=[]{}|;:,.<>?' \
+      < /dev/urandom | head -c "$length"
+  else
+    LC_ALL=C tr -dc 'A-Za-z0-9' \
+      < /dev/urandom | head -c "$length"
+  fi
+  echo
+}
+
+# ─── cmd: init ────────────────────────────────────────────────────────────────
+
+cmd_init() {
+  header "pwctl init"
+  _check_deps
+
+  mkdir -p "$PWCTL_CONFIG_DIR" "$PWCTL_DATA_DIR"
+
+  # Write config
+  if [[ ! -f "$PWCTL_CONFIG_FILE" ]]; then
+    cat > "$PWCTL_CONFIG_FILE" <<EOF
+PWCTL_VAULT="\${XDG_DATA_HOME:-\$HOME/.local/share}/pwctl/vault.yaml"
+PWCTL_CLIP_TIMEOUT=30
+PWCTL_GEN_LENGTH=20
+PWCTL_GEN_SYMBOLS=true
+EOF
+    info "Config written to ${PWCTL_CONFIG_FILE}"
+  else
+    dim "Config already exists: ${PWCTL_CONFIG_FILE}"
+  fi
+
+  # Resolve age public key from sops default location
+  local age_key_file="${SOPS_AGE_KEY_FILE:-${XDG_CONFIG_HOME}/sops/age/keys.txt}"
+  [[ -f "$age_key_file" ]] \
+    || die "Age key not found at ${age_key_file}\nGenerate one: age-keygen -o ${age_key_file}"
+
+  local pubkey
+  pubkey=$(grep '^# public key:' "$age_key_file" | head -1 | awk '{print $NF}')
+  [[ -n "$pubkey" ]] || die "Could not parse public key from ${age_key_file}"
+  dim "Age public key: ${pubkey}"
+
+  # Write .sops.yaml
+  local sops_yaml="${PWCTL_DATA_DIR}/.sops.yaml"
+  if [[ ! -f "$sops_yaml" ]]; then
+    cat > "$sops_yaml" <<EOF
+creation_rules:
+  - path_regex: vault\.yaml$
+    age: ${pubkey}
+EOF
+    info "SOPS rules written to ${sops_yaml}"
+  else
+    dim ".sops.yaml already exists"
+  fi
+
+  # Create vault
+  if [[ ! -f "$PWCTL_VAULT" ]]; then
+    local tmp
+    tmp=$(mktemp /tmp/pwctl_XXXXXX.yaml)
+    trap "rm -f '$tmp'" EXIT
+    echo '_pwctl_init: "1"' > "$tmp"
+    sops --encrypt --age "$pubkey" \
+      --input-type yaml --output-type yaml "$tmp" > "$PWCTL_VAULT"
+    rm -f "$tmp"; trap - EXIT
+    info "Vault created at ${PWCTL_VAULT}"
+  else
+    dim "Vault already exists: ${PWCTL_VAULT}"
+  fi
+
+  echo
+  info "pwctl is ready!  Try: pwctl set <key>"
+}
+
+# ─── cmd: set ─────────────────────────────────────────────────────────────────
+
+cmd_set() {
+  _require_vault
+
+  local generate=false plain=false key="" value=""
+
+  # Parse flags and positional args (key then optional value)
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --generate|-g) generate=true; shift ;;
+      --plain|-p)    plain=true;    shift ;;
+      -*) die "Unknown option: $1" ;;
+      *)  [[ -z "$key" ]] && { key="$1"; shift; } || { value="$1"; shift; } ;;
+    esac
+  done
+
+  # Key: show if provided, prompt if not
+  if [[ -z "$key" ]]; then
+    printf "${CYAN}  Key   : ${RESET}"; read -r key
+  else
+    printf "  ${DIM}Key   : %s${RESET}\n" "$key"
+  fi
+  [[ -n "$key" ]] || die "Key cannot be empty"
+
+  if _key_exists "$key"; then
+    printf "${YELLOW}  '%s' already exists. Overwrite? [y/N] ${RESET}" "$key"
+    read -r confirm
+    [[ "$confirm" =~ ^[Yy]$ ]] || { dim "Aborted."; exit 0; }
+  fi
+
+  if [[ "$generate" == true && -n "$value" ]]; then
+    die "--generate and an explicit value are mutually exclusive"
+  fi
+
+  if [[ -n "$value" ]]; then
+    # Value provided as argument — echo it (respects --plain for display)
+    if [[ "$plain" == true ]]; then
+      printf "  ${DIM}Value : %s${RESET}\n" "$value"
+    else
+      printf "  ${DIM}Value : ***${RESET}\n"
+    fi
+  elif [[ "$generate" == true ]]; then
+    value=$(_gen_password "$PWCTL_GEN_LENGTH" "$PWCTL_GEN_SYMBOLS")
+    printf "  ${DIM}Generated:${RESET} ${BOLD}%s${RESET}\n" "$value"
+  elif [[ "$plain" == true ]]; then
+    printf "${CYAN}  Value : ${RESET}"
+    read -r value
+    [[ -n "$value" ]] || die "Value cannot be empty"
+  else
+    printf "${CYAN}  Value : ${RESET}"
+    value=""
+    while IFS= read -rs -n1 char; do
+      if [[ -z "$char" ]]; then          # Enter
+        break
+      elif [[ "$char" == $'\x7f' || "$char" == $'\b' ]]; then  # Backspace
+        if [[ -n "$value" ]]; then
+          value="${value%?}"
+          printf "\b \b"   # erase last *
+        fi
+      else
+        value+="$char"
+        printf "${DIM}*${RESET}"
+      fi
+    done
+    printf "\n"
+    [[ -n "$value" ]] || die "Value cannot be empty"
+  fi
+
+  _vault_set "$key" "$value"
+  echo
+  info "Saved ${key}"
+  _clip "$value" "$key"
+}
+
+# ─── cmd: get ─────────────────────────────────────────────────────────────────
+
+cmd_get() {
+  _require_vault
+  local key="${1:-}"
+  if [[ -z "$key" ]]; then
+    key=$(_pick_key "  🔑 get › ") || true
+  fi
+  [[ -n "$key" ]] || die "No key selected"
+  _key_exists "$key" || die "Key not found: ${key}"
+
+  local value
+  value=$(_vault_get "$key")
+  _clip "$value" "$key"
+}
+
+# ─── cmd: show ────────────────────────────────────────────────────────────────
+
+cmd_show() {
+  _require_vault
+  local key="${1:-}"
+  if [[ -z "$key" ]]; then
+    key=$(_pick_key "  🔑 show › ") || true
+  fi
+  [[ -n "$key" ]] || die "No key selected"
+  _key_exists "$key" || die "Key not found: ${key}"
+
+  local value
+  value=$(_vault_get "$key")
+
+  echo
+  printf "${YELLOW}⚠️   Sensitive output — clear screen when done${RESET}\n\n"
+  printf "  ${CYAN}%s${RESET}  %s\n\n" "$key" "$value"
+}
+
+# ─── cmd: list ────────────────────────────────────────────────────────────────
+
+cmd_list() {
+  _require_vault
+
+  local keys
+  keys=$(_vault_keys) || true
+  [[ -n "$keys" ]] || { warn "Vault is empty. Run: pwctl set <key>"; exit 0; }
+
+  local count
+  count=$(echo "$keys" | wc -l | tr -d ' ')
+
+  local selected
+  selected=$(
+    echo "$keys" | fzf \
+      --prompt="  🔑  " \
+      --header="$(printf "${BOLD}pwctl — ${count} keys${RESET}\n  enter:copy  ctrl-s:show  ctrl-e:edit  ctrl-d:delete")" \
+      --header-first \
+      --layout=reverse \
+      --border=rounded \
+      --border-label=" pwctl " \
+      --color="header:italic,border:cyan,label:cyan:bold" \
+      --expect="enter,ctrl-s,ctrl-e,ctrl-d" \
+      2>/dev/null
+  ) || true
+
+  [[ -z "$selected" ]] && exit 0
+
+  local action key
+  action=$(echo "$selected" | head -1)
+  key=$(echo "$selected"    | tail -1)
+  [[ -z "$key" ]] && exit 0
+
+  case "$action" in
+    ctrl-s) cmd_show "$key" ;;
+    ctrl-e) cmd_set  "$key" ;;
+    ctrl-d) cmd_rm   "$key" ;;
+    *)      cmd_get  "$key" ;;   # enter → copy
+  esac
+}
+
+# ─── cmd: rm ──────────────────────────────────────────────────────────────────
+
+cmd_rm() {
+  _require_vault
+  local key="${1:-}"
+  if [[ -z "$key" ]]; then
+    key=$(_pick_key "  🔑 delete › ") || true
+  fi
+  [[ -n "$key" ]] || die "No key selected"
+  _key_exists "$key" || die "Key not found: ${key}"
+
+  printf "${RED}  Delete '%s'? [y/N] ${RESET}" "$key"
+  read -r confirm
+  [[ "$confirm" =~ ^[Yy]$ ]] || { dim "Aborted."; exit 0; }
+
+  # sops has no native delete — decrypt → remove line → re-encrypt
+  local tmp_plain tmp_enc
+  tmp_plain=$(mktemp /tmp/pwctl_plain_XXXXXX.yaml)
+  tmp_enc=$(mktemp   /tmp/pwctl_enc_XXXXXX.yaml)
+  trap "rm -f '$tmp_plain' '$tmp_enc'" EXIT
+
+  sops --decrypt "$PWCTL_VAULT" > "$tmp_plain"
+  grep -v "^${key}:" "$tmp_plain" > "${tmp_plain}.tmp"
+  mv "${tmp_plain}.tmp" "$tmp_plain"
+
+  local pubkey
+  pubkey=$(grep 'age:' "${PWCTL_DATA_DIR}/.sops.yaml" | awk '{print $2}')
+  sops --encrypt --age "$pubkey" \
+    --input-type yaml --output-type yaml "$tmp_plain" > "$tmp_enc"
+
+  mv "$tmp_enc" "$PWCTL_VAULT"
+  rm -f "$tmp_plain"
+  trap - EXIT
+
+  echo
+  info "Deleted ${key}"
+}
+
+# ─── cmd: gen ─────────────────────────────────────────────────────────────────
+
+cmd_gen() {
+  local length="$PWCTL_GEN_LENGTH"
+  local symbols="$PWCTL_GEN_SYMBOLS"
+  local save_key=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --save)          shift; save_key="${1:-}"; shift ;;
+      --length|-l)     shift; length="${1:-}";   shift ;;
+      --no-symbols)    symbols=false;            shift ;;
+      *) die "Unknown option: $1" ;;
+    esac
+  done
+
+  local value
+  value=$(_gen_password "$length" "$symbols")
+  printf "\n  ${BOLD}%s${RESET}\n\n" "$value"
+  _clip "$value" "Generated value"
+
+  if [[ -n "$save_key" ]]; then
+    _require_vault
+    _vault_set "$save_key" "$value"
+    info "Saved to ${save_key}"
+  fi
+}
+
+# ─── cmd: config ──────────────────────────────────────────────────────────────
+
+cmd_config() {
+  header "pwctl config"
+  echo
+  local age_key="${SOPS_AGE_KEY_FILE:-${XDG_CONFIG_HOME}/sops/age/keys.txt}"
+  printf "  ${CYAN}%-20s${RESET}  %s\n" "Config"       "$PWCTL_CONFIG_FILE"
+  printf "  ${CYAN}%-20s${RESET}  %s\n" "Vault"         "$PWCTL_VAULT"
+  printf "  ${CYAN}%-20s${RESET}  %s\n" "SOPS rules"    "${PWCTL_DATA_DIR}/.sops.yaml"
+  printf "  ${CYAN}%-20s${RESET}  %s\n" "Age key file"  "$age_key"
+  printf "  ${CYAN}%-20s${RESET}  %s\n" "Clip timeout"  "${PWCTL_CLIP_TIMEOUT}s"
+  printf "  ${CYAN}%-20s${RESET}  %s\n" "Gen length"    "$PWCTL_GEN_LENGTH"
+  printf "  ${CYAN}%-20s${RESET}  %s\n" "Gen symbols"   "$PWCTL_GEN_SYMBOLS"
+  echo
+  if [[ -f "$PWCTL_VAULT" ]]; then
+    local count
+    count=$(_vault_keys 2>/dev/null | grep -c . || echo 0)
+    printf "  ${GREEN}%-20s${RESET}  %s keys\n" "Vault" "$count"
+  else
+    printf "  ${RED}%-20s${RESET}  not initialised (run: pwctl init)\n" "Vault"
+  fi
+  echo
+}
+
+# ─── cmd: help ────────────────────────────────────────────────────────────────
+
+cmd_help() {
+  cat <<EOF
+
+${BOLD}${BLUE}pwctl${RESET} ${DIM}v${PWCTL_VERSION}${RESET} — CLI password manager (sops + age)
+
+${BOLD}USAGE${RESET}
+  pwctl <command> [key]
+
+${BOLD}COMMANDS${RESET}
+  ${CYAN}init${RESET}                          First-time setup
+  ${CYAN}set${RESET}  ${DIM}s  add  a${RESET}   [key [value]]   Set a key
+             ${DIM}-g  --generate     generate value instead of prompting${RESET}
+             ${DIM}-p  --plain        echo input as plaintext (default: ***)${RESET}
+  ${CYAN}get${RESET}  ${DIM}g${RESET}           [key]       Copy value to clipboard (fzf pick if omitted)
+  ${CYAN}show${RESET} ${DIM}sh${RESET}          [key]       Print value to terminal  (fzf pick if omitted)
+  ${CYAN}list${RESET} ${DIM}ls  l${RESET}                   fzf picker — browse & act on all keys
+  ${CYAN}rm${RESET}   ${DIM}r  del  d${RESET}  [key]       Delete a key             (fzf pick if omitted)
+  ${CYAN}gen${RESET}  ${DIM}gn${RESET}          [opts]      Generate a value
+             ${DIM}--save <key>     save generated value to vault${RESET}
+             ${DIM}--length N       length (default: ${PWCTL_GEN_LENGTH})${RESET}
+             ${DIM}--no-symbols     alphanumeric only${RESET}
+  ${CYAN}config${RESET} ${DIM}cfg${RESET}                   Show resolved config & vault status
+  ${CYAN}help${RESET}   ${DIM}h${RESET}                     Show this help
+
+${BOLD}LIST KEYBINDINGS${RESET}
+  ${DIM}enter${RESET}    copy value to clipboard
+  ${DIM}ctrl-s${RESET}   show value in terminal
+  ${DIM}ctrl-e${RESET}   edit (overwrite) value
+  ${DIM}ctrl-d${RESET}   delete key
+
+${BOLD}VAULT${RESET}
+  Flat sops-encrypted YAML — keys are plaintext, values are encrypted.
+  Safe to git-commit. No extra abstraction on top of sops.
+
+  ${DIM}~/.config/pwctl/config${RESET}
+  ${DIM}~/.local/share/pwctl/vault.yaml${RESET}
+
+EOF
+}
+
+# ─── Entrypoint ───────────────────────────────────────────────────────────────
+
+main() {
+  local cmd="${1:-help}"
+  shift || true
+  case "$cmd" in
+    init)                     cmd_init   "$@" ;;
+    set|add|s|a)              cmd_set    "$@" ;;
+    get|g)                    cmd_get    "$@" ;;
+    show|sh)                  cmd_show   "$@" ;;
+    list|ls|l)                cmd_list   "$@" ;;
+    rm|del|delete|r|d)        cmd_rm     "$@" ;;
+    gen|gn)                   cmd_gen    "$@" ;;
+    config|cfg)               cmd_config "$@" ;;
+    help|h|-h|--help)         cmd_help ;;
+    version|--version|-v)     echo "pwctl ${PWCTL_VERSION}" ;;
+    *) err "Unknown command: ${cmd}"; cmd_help; exit 1 ;;
+  esac
+}
+
+main "$@"

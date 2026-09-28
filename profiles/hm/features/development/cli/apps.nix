@@ -33,6 +33,7 @@ in
         libwebp
         libavif
         glow
+        ast-grep
       ]);
   };
 }

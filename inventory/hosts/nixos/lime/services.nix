@@ -65,8 +65,24 @@
     ipv4 = "210.121.44.78";
     domain = "pippaye.top";
 
-    nginxVirtualHosts.cpa.locations."/" = {
-      proxyPass = "http://127.0.0.1:38001";
+    nginxVirtualHosts.cpa = {
+      dnsRecordExt.proxied = false;
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:38001";
+        extraConfig = ''
+          proxy_buffering off;
+          proxy_cache off;
+
+          proxy_read_timeout 600s;
+          proxy_send_timeout 600s;
+          proxy_connect_timeout 60s;
+
+          proxy_http_version 1.1;
+          proxy_set_header Connection "";
+          proxy_set_header X-Accel-Buffering "no";
+          chunked_transfer_encoding on;
+        '';
+      };
     };
   };
 }
