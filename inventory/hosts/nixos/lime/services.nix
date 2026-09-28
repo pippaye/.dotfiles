@@ -64,7 +64,11 @@
   infra.dnsctl = {
     ipv4 = "210.121.44.78";
     domain = "pippaye.top";
-
+    nginxVirtualHosts.bark = {
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:33080";
+      };
+    };
     nginxVirtualHosts.cpa = {
       dnsRecordExt.proxied = false;
       locations."/" = {
