@@ -40,3 +40,33 @@ get-host-age-key:
 fmt:
     nix fmt **/*.nix
 
+# one-time: create the self-signed cert used to sign kitty.app on darwin
+# (see docs/kitty-darwin-codesign.md). Idempotent.
+kitty-darwin-codesign-init:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    dir=/var/lib/kitty-darwin-codesign
+    repo_cert=overlays/kitty-darwin-codesign/cert.pem
+    if ! sudo test -e "$dir/key.pem"; then
+      tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+      (
+        umask 077; cd "$tmp"
+        printf '%s\n' '[req]' 'distinguished_name=dn' 'x509_extensions=ext' 'prompt=no' \
+          '[dn]' 'CN=kitty-darwin-codesign' \
+          '[ext]' 'basicConstraints=critical,CA:false' 'keyUsage=critical,digitalSignature' \
+          'extendedKeyUsage=critical,codeSigning' 'subjectKeyIdentifier=hash' > cert.cnf
+        /usr/bin/openssl req -x509 -newkey rsa:2048 -nodes -keyout raw.pem -out cert.pem -days 36500 -config cert.cnf 2>/dev/null
+        # rcodesign wants PKCS#8
+        /usr/bin/openssl pkcs8 -topk8 -nocrypt -in raw.pem -out key.pem
+      )
+      sudo install -d -o root -g wheel -m 0755 "$dir"
+      sudo install -o root -g nixbld -m 0640 "$tmp/key.pem" "$dir/key.pem"
+      sudo install -o root -g wheel -m 0644 "$tmp/cert.pem" "$dir/cert.pem"
+      echo "generated $dir/key.pem"
+    fi
+    mkdir -p "$(dirname "$repo_cert")"
+    cp "$dir/cert.pem" "$repo_cert"
+    git add "$repo_cert"
+    /usr/bin/openssl x509 -in "$repo_cert" -noout -subject -fingerprint -sha1
+    echo "back up $dir/key.pem somewhere safe: losing it means re-granting all kitty permissions."
+
