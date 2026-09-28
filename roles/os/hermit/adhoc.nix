@@ -2,6 +2,7 @@
 {
   environment.systemPackages = [
     pkgs.texlive.combined.scheme-full
+    pkgs.tmux
   ];
   homebrew = {
     enable = true;

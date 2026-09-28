@@ -6,4 +6,5 @@ with pkgs;
   vim
   less
   bash
+  tmux
 ]
