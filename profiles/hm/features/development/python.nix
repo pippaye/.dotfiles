@@ -6,21 +6,7 @@
   ...
 }:
 let
-  pythonWithBeanqueryWorkaround = pkgs.python3.override {
-    packageOverrides = python-final: python-prev: {
-      beanquery = python-prev.beanquery.overridePythonAttrs (oldAttrs: {
-        # TODO : beanquery installs a top-level site-packages/docs directory.
-        # In this shared Python environment it conflicts with cryptography's docs
-        # when fava and pdfplumber are both present. This docs directory is not
-        # needed at runtime; revisit or remove this once nixpkgs/upstream package
-        # metadata stops installing it into site-packages.
-        postInstall = (oldAttrs.postInstall or "") + ''
-          rm -rf $out/${python-final.python.sitePackages}/docs
-        '';
-      });
-    };
-  };
-  python = pythonWithBeanqueryWorkaround.withPackages (
+  python = pkgs.python3.withPackages (
     ps:
     with ps;
     [
