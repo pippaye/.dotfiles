@@ -26,7 +26,7 @@ in
     code-cursor = prev.code-cursor.override {
       commandLineArgs = (builtins.concatStringsSep " " electronArgs);
     };
-    kitty = import ./kitty-darwin-codesign { inherit prev; };
+    kitty = import ./kitty-darwin-codesign { inherit final prev; };
   };
   # FIXME jetbrains-mono: Failure on dependency with python313Packages.picosvg
   workaround = (

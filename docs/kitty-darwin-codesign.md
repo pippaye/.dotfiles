@@ -87,14 +87,33 @@ TCC（完全磁盘访问、辅助功能、屏幕录制等）和 usernoted 保存
 
 ## 修复方案
 
-在 overlay 里给 `kitty` 追加一个 `postFixupHooks`。它排在 nixpkgs 自带的 `autoSignDarwinBinariesHook` 之后执行，做以下几件事：
+**上游 kitty 不重新编译**，照常从 cache.nixos.org 下载。overlay 把 `kitty` 替换成一个很小的包装 derivation（`kitty-<版本>-codesigned`），只在本机做复制和签名，几秒钟就完成：
 
-1. 用 `PlistBuddy` 把 `CFBundleIdentifier` 改成新的 ID（当前是 `net.kovidgoyal.kitty.nixpkgs`）；
-2. 用 nixpkgs 里的 `rcodesign` 和**固定的自签名证书**给整个 bundle 签名：
+1. 把上游的 `kitty.app` 复制到 `$out`；
+2. **重新生成启动器 `Contents/MacOS/kitty`**（见下方"为什么要重新生成启动器"）；
+3. 用 `PlistBuddy` 把 `CFBundleIdentifier` 改成新的 ID（当前是 `net.kovidgoyal.kitty.nixpkgs`）；
+4. 用 nixpkgs 里的 `rcodesign` 和**固定的自签名证书**给整个 bundle 签名：
    - `.kitty-wrapped`（实际运行的进程）和 `kitty`（wrapper，即 bundle 的主可执行文件）使用 Bundle ID 作为签名标识；
    - `kitten`、`kitty-quick-access.app` 也一起签名；
    - Info.plist 和资源文件都封装进签名。
-3. 构建时检查：`codesign --verify --deep --strict` 通过、DR 的形式是 `identifier … and certificate root`、`.kitty-wrapped` 的签名标识正确。任何一项不满足，构建都会失败。
+5. 构建时检查：启动器里不再引用上游路径、`codesign --verify --deep --strict` 通过、DR 的形式是 `identifier … and certificate root`、`.kitty-wrapped` 的签名标识正确。任何一项不满足，构建都会失败。
+6. bundle 之外的结构和上游保持一致：`bin/kitty`、`bin/kitten` 指向新的 bundle；`share/` 链接到上游；`nix-support/` 从上游复制（其中 `propagated-user-env-packages` 会把 terminfo 一起装进 profile）。
+   `terminfo`、`shell_integration`、`kitten` 这几个额外输出通过 `passthru` 直接复用上游的；另外 `passthru.unsigned` 指向上游原包。
+
+| 平台 | 结果 |
+| --- | --- |
+| aarch64-darwin | 上游 kitty 从缓存下载，本机只构建 `-codesigned` 这一个小包（实测含求值约 8 秒） |
+| Linux | overlay 直接返回上游 `kitty`，derivation 与上游完全相同，不受任何影响 |
+
+### 为什么要重新生成启动器
+
+上游 bundle 里的 `Contents/MacOS/kitty` 是 `makeBinaryWrapper` 生成的启动器，里面**写死了上游 store 路径下的 `.kitty-wrapped`**。
+如果只复制加签名，运行时启动器还是会 exec 上游那个没有正确签名的 `.kitty-wrapped`，通知照样被拒绝，签名等于白做。
+
+所以这里用 `makeBinaryWrapper` 重新生成启动器，让它指向副本里的 `.kitty-wrapped`，`PATH` 后缀和上游保持一致（`$out/bin` + imagemagick、ncurses.dev、shader-slang）。
+检查过整个 bundle：只有这一个文件引用上游 `$out`，其他内部链接都是相对路径，复制后仍然有效。
+
+已实测：用 LaunchServices 启动复制后的 App，实际运行的进程是副本里的 `.kitty-wrapped`，内核里看到的签名标识是 `net.kovidgoyal.kitty.nixpkgs`，没有任何上游 `.kitty-wrapped` 进程。
 
 修复后的签名：
 
@@ -120,8 +139,12 @@ Authority=kitty-darwin-codesign
 
 实现细节：
 
-- 钩子的注册写在 `preFixup` 里。nixpkgs 的 auto-sign hook 在 setup hook 被加载时就已经加进了 `postFixupHooks`，这样写能保证我们的钩子排在它后面。
-- 钩子要读取 store 之外的私钥，还要调用 `/usr/bin/codesign` 和 `/usr/libexec/PlistBuddy`，所以**要求 nix 沙盒是关闭的**（`/etc/nix/nix.conf` 里 `sandbox = false`，这也是 darwin 的默认值）。
+- **除了 `prev.kitty`，其他依赖一律用 `final.*`，不能用 `prev.*`。** darwin 的 stdenv 会在用户 overlay *之后* 再覆盖一部分包（例如 `ncurses`）。
+  因此在 overlay 里，`prev.ncurses` 和上游 kitty 实际依赖的 `final.ncurses` 是两个不同的 derivation，前者在缓存里没有。
+  第一版写成了 `prev.ncurses.dev`，结果每次部署都要从源码编译 ncurses。现在构建时还会检查：拼出来的 PATH 必须和上游启动器里的逐字一致，不一致就构建失败。
+- 包装 derivation 设置了 `allowSubstitutes = false`、`preferLocalBuild = true`：它依赖本机私钥，不可能在任何缓存里找到，直接本机构建。
+- 构建脚本没有用 `set -u`：stdenv 本身已经是 `set -e`，而 `makeBinaryWrapper` 的 setup hook 在 `set -u` 下会报 `unbound variable`。
+- 构建要读取 store 之外的私钥，还要调用 `/usr/bin/codesign` 和 `/usr/libexec/PlistBuddy`，所以**要求 nix 沙盒是关闭的**（`/etc/nix/nix.conf` 里 `sandbox = false`，这也是 darwin 的默认值）。
   用 `__impureHostDeps` 声明这些路径不可行，会报 `not in allowed-impure-host-deps`。
 - 选 `rcodesign` 而不是 `/usr/bin/codesign`，是因为后者只能从 keychain 读取签名身份，nixbld 用户没有 keychain；`rcodesign` 可以直接读取 PEM 文件。
 - 如果证书文件不存在，求值阶段就会报错，提示先运行 `just kitty-darwin-codesign-init`；如果私钥读不到，构建阶段报错。

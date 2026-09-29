@@ -15,7 +15,6 @@ let
     import_codex = ./import_codex.sh;
     cheatsheet = ./cheatsheet.sh;
     ghpm = ./ghpm.py;
-    anycopy = ./anycopy.sh;
   };
 in
 {
