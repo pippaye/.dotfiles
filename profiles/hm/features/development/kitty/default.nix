@@ -24,6 +24,7 @@ in
       map ctrl+shift+enter new_window_with_cwd
       map f1 launch --stdin-source=@screen_scrollback nvim -R -
       map f2 launch --stdin-source=@last_cmd_output nvim -R -
+      allow_remote_control yes
     '';
   };
 }
