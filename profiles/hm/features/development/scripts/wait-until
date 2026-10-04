@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# wait-until - 轮询执行谓词命令直到成立或超时
+# ==============================================================================
+
+set -e
+
+show_help() {
+  cat <<'EOF'
+Usage: wait-until [OPTIONS] [--] <COMMAND> [ARGS...]
+
+Execute a predicate command repeatedly until it succeeds (exit code 0) or times out.
+
+Options:
+  -t, --timeout SECS     Max wait time in seconds (default: 0, wait forever)
+  -i, --interval SECS    Polling interval in seconds (default: 1)
+  -q, --quiet            Suppress predicate stdout and stderr
+  -v, --invert           Invert condition (wait until command fails / exit code != 0)
+  -h, --help             Show this help message and exit
+
+Exit Codes:
+  0      Predicate succeeded
+  124    Timed out
+  130    Interrupted by user (Ctrl+C)
+  2      Invalid arguments
+EOF
+}
+
+wait_until_main() {
+  local timeout=0
+  local interval=1
+  local quiet=false
+  local invert=false
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -h|--help)
+        show_help
+        return 0
+        ;;
+      -t|--timeout)
+        if [[ -z "$2" ]]; then
+          echo "wait-until: option '$1' requires an argument" >&2
+          return 2
+        fi
+        timeout="$2"
+        shift 2
+        ;;
+      -i|--interval)
+        if [[ -z "$2" ]]; then
+          echo "wait-until: option '$1' requires an argument" >&2
+          return 2
+        fi
+        interval="$2"
+        shift 2
+        ;;
+      -q|--quiet)
+        quiet=true
+        shift
+        ;;
+      -v|--invert)
+        invert=true
+        shift
+        ;;
+      --)
+        shift
+        break
+        ;;
+      -*)
+        echo "wait-until: unrecognized option '$1'" >&2
+        echo "Try 'wait-until --help' for more information." >&2
+        return 2
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+
+  if [[ $# -eq 0 ]]; then
+    echo "wait-until: missing predicate command operand" >&2
+    echo "Usage: wait-until [OPTIONS] [--] <COMMAND> [ARGS...]" >&2
+    return 2
+  fi
+
+  local start_time
+  start_time="$(date +%s)"
+  local interrupted=false
+
+  trap 'interrupted=true' INT TERM
+
+  while true; do
+    if [[ "$interrupted" == true ]]; then
+      trap - INT TERM
+      echo "wait-until: interrupted by user" >&2
+      return 130
+    fi
+
+    local status=0
+    if [[ "$quiet" == true ]]; then
+      "$@" >/dev/null 2>&1 || status=$?
+    else
+      "$@" || status=$?
+    fi
+
+    if [[ "$invert" == true ]]; then
+      if [[ "$status" -ne 0 ]]; then
+        trap - INT TERM
+        return 0
+      fi
+    else
+      if [[ "$status" -eq 0 ]]; then
+        trap - INT TERM
+        return 0
+      fi
+    fi
+
+    # 超时判断
+    if [[ "$timeout" =~ ^[0-9]+(\.[0-9]+)?$ ]] && (( $(echo "$timeout > 0" | bc -l 2>/dev/null || [ "$timeout" -gt 0 ] 2>/dev/null) )); then
+      local now
+      now="$(date +%s)"
+      local elapsed=$((now - start_time))
+      if (( $(echo "$elapsed >= $timeout" | bc -l 2>/dev/null || [ "$elapsed" -ge "${timeout%.*}" ] 2>/dev/null) )); then
+        trap - INT TERM
+        echo "wait-until: timed out after ${timeout}s" >&2
+        return 124
+      fi
+    fi
+
+    sleep "$interval"
+  done
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  wait_until_main "$@"
+fi

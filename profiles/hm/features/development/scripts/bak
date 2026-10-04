@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# bak - 智能备份文件与目录 (CoW 秒级克隆加速，避免尾部斜杠陷阱)
+# ==============================================================================
+
+set -e
+
+show_help() {
+  cat <<'EOF'
+Usage: bak [OPTIONS] <PATH...>
+
+Create a backup copy of file(s) or director(ies).
+Automatically uses Copy-on-Write (APFS clone / Linux reflink) for instant backups.
+Avoids trailing slash issues associated with rsync.
+
+Options:
+  -f, --force        Overwrite destination if it already exists
+  -t, --timestamp    Append timestamp to backup name (<name>.YYYYMMDD_HHMMSS.bak)
+  -n, --numbered     Append sequential number if destination exists (<name>.bak.1, .2)
+  -m, --move         Move (rename) instead of copying
+  -v, --verbose      Show backup operation details
+  -h, --help         Show this help message and exit
+
+Exit Codes:
+  0    Success
+  1    Backup failed or destination already exists without -f
+  2    Invalid arguments
+EOF
+}
+
+bak_main() {
+  local force=false
+  local timestamp=false
+  local numbered=false
+  local move=false
+  local verbose=false
+  local positional=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -h|--help)
+        show_help
+        return 0
+        ;;
+      -f|--force)
+        force=true
+        shift
+        ;;
+      -t|--timestamp)
+        timestamp=true
+        shift
+        ;;
+      -n|--numbered)
+        numbered=true
+        shift
+        ;;
+      -m|--move)
+        move=true
+        shift
+        ;;
+      -v|--verbose)
+        verbose=true
+        shift
+        ;;
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          positional+=("$1")
+          shift
+        done
+        break
+        ;;
+      -*)
+        echo "bak: unrecognized option '$1'" >&2
+        echo "Try 'bak --help' for more information." >&2
+        return 2
+        ;;
+      *)
+        positional+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  if [[ ${#positional[@]} -eq 0 ]]; then
+    echo "bak: missing file operand" >&2
+    echo "Usage: bak [OPTIONS] <PATH...>" >&2
+    return 2
+  fi
+
+  local has_error=0
+  for src in "${positional[@]}"; do
+    # 彻底去除末尾的斜杠，避免目录名解析歧义
+    src="${src%/}"
+
+    if [[ ! -e "$src" && ! -L "$src" ]]; then
+      echo "bak: cannot stat '$src': No such file or directory" >&2
+      has_error=1
+      continue
+    fi
+
+    local dest=""
+    if [[ "$timestamp" == true ]]; then
+      local ts
+      ts="$(date '+%Y%m%d_%H%M%S')"
+      dest="${src}.${ts}.bak"
+    elif [[ "$numbered" == true ]]; then
+      dest="${src}.bak"
+      local i=1
+      while [[ -e "$dest" || -L "$dest" ]]; do
+        dest="${src}.bak.${i}"
+        i=$((i + 1))
+      done
+    else
+      dest="${src}.bak"
+    fi
+
+    if [[ -e "$dest" || -L "$dest" ]]; then
+      if [[ "$force" != true ]]; then
+        echo "bak: destination '$dest' already exists (use -f, -t, or -n)" >&2
+        has_error=1
+        continue
+      fi
+      rm -rf -- "$dest"
+    fi
+
+    if [[ "$move" == true ]]; then
+      $verbose && echo "bak: moving '$src' -> '$dest'"
+      if ! mv -- "$src" "$dest"; then
+        has_error=1
+      fi
+    else
+      $verbose && echo "bak: backing up '$src' -> '$dest'"
+      # 尝试 CoW Clone 快速克隆
+      if cp -c -R -- "$src" "$dest" 2>/dev/null; then
+        $verbose && echo "  (cloned using macOS APFS CoW)"
+      elif cp -a --reflink=auto -- "$src" "$dest" 2>/dev/null; then
+        $verbose && echo "  (cloned using Linux reflink CoW)"
+      else
+        # 回退至标准递归复制
+        if ! cp -p -R -- "$src" "$dest"; then
+          echo "bak: failed to copy '$src' to '$dest'" >&2
+          has_error=1
+        fi
+      fi
+    fi
+  done
+
+  return "$has_error"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  bak_main "$@"
+fi

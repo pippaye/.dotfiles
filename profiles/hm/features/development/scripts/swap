@@ -1,0 +1,153 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# swap - 安全交换两个文件、目录或软链接的路径与内容
+# ==============================================================================
+
+set -e
+
+show_help() {
+  cat <<'EOF'
+Usage: swap [OPTIONS] <PATH_A> <PATH_B>
+
+Exchange the contents/names of two paths safely without data loss.
+Supports files, directories, and symlinks.
+
+Options:
+  -v, --verbose    Show detailed operation steps
+  -h, --help       Show this help message and exit
+
+Exit Codes:
+  0    Success
+  1    Path does not exist, permission denied, or move failed
+  2    Invalid arguments
+EOF
+}
+
+swap_main() {
+  local verbose=false
+  local positional=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -h|--help)
+        show_help
+        return 0
+        ;;
+      -v|--verbose)
+        verbose=true
+        shift
+        ;;
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          positional+=("$1")
+          shift
+        done
+        break
+        ;;
+      -*)
+        echo "swap: unrecognized option '$1'" >&2
+        echo "Try 'swap --help' for more information." >&2
+        return 2
+        ;;
+      *)
+        positional+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  if [[ ${#positional[@]} -ne 2 ]]; then
+    echo "swap: missing file operand(s)" >&2
+    echo "Usage: swap [OPTIONS] <PATH_A> <PATH_B>" >&2
+    return 2
+  fi
+
+  local path_a="${positional[0]}"
+  local path_b="${positional[1]}"
+
+  if [[ ! -e "$path_a" && ! -L "$path_a" ]]; then
+    echo "swap: cannot access '$path_a': No such file or directory" >&2
+    return 1
+  fi
+
+  if [[ ! -e "$path_b" && ! -L "$path_b" ]]; then
+    echo "swap: cannot access '$path_b': No such file or directory" >&2
+    return 1
+  fi
+
+  # 检测是否指向同一个物理实体 (通过设备号和 inode)
+  local dev_a ino_a dev_b ino_b
+  if stat -f %d "$path_a" >/dev/null 2>&1; then
+    # BSD / macOS
+    dev_a=$(stat -f %d "$path_a")
+    ino_a=$(stat -f %i "$path_a")
+    dev_b=$(stat -f %d "$path_b")
+    ino_b=$(stat -f %i "$path_b")
+  else
+    # Linux (GNU stat)
+    dev_a=$(stat -c %d "$path_a" 2>/dev/null || true)
+    ino_a=$(stat -c %i "$path_a" 2>/dev/null || true)
+    dev_b=$(stat -c %d "$path_b" 2>/dev/null || true)
+    ino_b=$(stat -c %i "$path_b" 2>/dev/null || true)
+  fi
+
+  if [[ -n "$dev_a" && "$dev_a" == "$dev_b" && "$ino_a" == "$ino_b" ]]; then
+    $verbose && echo "swap: '$path_a' and '$path_b' are the same physical entity. No-op."
+    return 0
+  fi
+
+  # 跨设备警告
+  if [[ -n "$dev_a" && -n "$dev_b" && "$dev_a" != "$dev_b" ]]; then
+    echo "swap: warning: '$path_a' and '$path_b' are on different filesystems. Swap is not atomic." >&2
+  fi
+
+  # 在 path_a 同级目录创建临时中间名
+  local dir_a
+  dir_a="$(dirname -- "$path_a")"
+  local base_a
+  base_a="$(basename -- "$path_a")"
+  local tmp_a="${dir_a}/.${base_a}.__swap_tmp_${RANDOM}_$$"
+
+  local step=0
+  cleanup() {
+    local exit_code=$?
+    if [[ $step -eq 1 ]]; then
+      echo "swap: rolling back '$path_a'..." >&2
+      mv -f -- "$tmp_a" "$path_a" 2>/dev/null || true
+    fi
+    exit "$exit_code"
+  }
+  trap cleanup INT TERM EXIT
+
+  $verbose && echo "swap: [1/3] moving '$path_a' -> temp"
+  if ! mv -- "$path_a" "$tmp_a"; then
+    echo "swap: failed to move '$path_a' to temp path" >&2
+    trap - INT TERM EXIT
+    return 1
+  fi
+  step=1
+
+  $verbose && echo "swap: [2/3] moving '$path_b' -> '$path_a'"
+  if ! mv -- "$path_b" "$path_a"; then
+    echo "swap: failed to move '$path_b' to '$path_a', aborting" >&2
+    # cleanup 将自动回滚 step 1
+    return 1
+  fi
+
+  $verbose && echo "swap: [3/3] moving temp -> '$path_b'"
+  if ! mv -- "$tmp_a" "$path_b"; then
+    echo "swap: critical failure moving temp to '$path_b'" >&2
+    return 1
+  fi
+
+  step=2
+  trap - INT TERM EXIT
+  $verbose && echo "swap: successfully swapped '$path_a' <-> '$path_b'"
+  return 0
+}
+
+# 兼顾独立执行与 source 模式
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  swap_main "$@"
+fi

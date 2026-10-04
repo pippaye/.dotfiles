@@ -1,30 +1,23 @@
 { lib, ... }:
 let
-  scripts = {
-    switch-to-airpods = ./switch-to-airpods.sh;
-    cleanup-bakup-files = ./cleanup-bakup-files.sh;
-    printsops = ./printsops.sh;
-    readlink-deep = ./readlink-deep.sh;
-    toggle-swayidle = ./toggle-swayidle.sh;
-    toggle-waybar = ./toggle-waybar.sh;
-    change-wallpaper = ./change-wallpaper.sh;
-    check-libs = ./check-libs.sh;
-    bark = ./bark.sh;
-    tokenctl = ./tokenctl.sh;
-    stash = ./stash.sh;
-    import_codex = ./import_codex.sh;
-    cheatsheet = ./cheatsheet.sh;
-    ghpm = ./ghpm.py;
-  };
+  # 自动扫描当前目录下的所有常规脚本文件（排除 default.nix、隐藏文件和子目录）
+  scripts =
+    builtins.readDir ./.
+    |> lib.filterAttrs (
+      name: type:
+      type == "regular"
+      && name != "default.nix"
+      && !(lib.hasPrefix "." name)
+    );
 in
 {
   home.file =
     scripts
-    |> (lib.mapAttrs' (
-      name: path:
+    |> lib.mapAttrs' (
+      name: _:
       lib.nameValuePair ".local/bin/${name}" {
-        source = path;
+        source = ./. + "/${name}";
         executable = true;
       }
-    ));
+    );
 }

@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# deref - 将符号链接就地解引用替换为真实实体副本
+# ==============================================================================
+
+set -e
+
+show_help() {
+  cat <<'EOF'
+Usage: deref [OPTIONS] <PATH...>
+
+Replace symlink(s) in-place with actual copies of their targets (dereferencing).
+Original target files/directories remain untouched.
+
+Options:
+  -r, --recursive  Recursively find and inline all symlinks in directories
+  -v, --verbose    Show verbose replacement messages
+  -h, --help       Show this help message and exit
+
+Exit Codes:
+  0    Success
+  1    Path does not exist, broken symlink, or copy failed
+  2    Invalid arguments
+EOF
+}
+
+_deref_one() {
+  local target="$1"
+  local verbose="$2"
+
+  if [[ ! -L "$target" ]]; then
+    return 0
+  fi
+
+  # 悬空软链接检测
+  if [[ ! -e "$target" ]]; then
+    echo "deref: error: '$target' is a broken symlink, skipping" >&2
+    return 1
+  fi
+
+  local parent
+  parent="$(dirname -- "$target")"
+  local base
+  base="$(basename -- "$target")"
+  local tmp="${parent}/.${base}.__deref_tmp_${RANDOM}_$$"
+
+  $verbose && echo "deref: inlining '$target'"
+
+  # -R 递归, -L 解引用源实体, -p 保留属性
+  if cp -R -L -p -- "$target" "$tmp" 2>/dev/null; then
+    # 先安全 unlink 软链接，再原子移动替换
+    unlink -- "$target" 2>/dev/null || rm -f -- "$target"
+    mv -f -- "$tmp" "$target"
+    return 0
+  else
+    rm -rf -- "$tmp" 2>/dev/null || true
+    echo "deref: failed to copy contents for '$target'" >&2
+    return 1
+  fi
+}
+
+deref_main() {
+  local recursive=false
+  local verbose=false
+  local positional=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -h|--help)
+        show_help
+        return 0
+        ;;
+      -r|--recursive)
+        recursive=true
+        shift
+        ;;
+      -v|--verbose)
+        verbose=true
+        shift
+        ;;
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          positional+=("$1")
+          shift
+        done
+        break
+        ;;
+      -*)
+        echo "deref: unrecognized option '$1'" >&2
+        echo "Try 'deref --help' for more information." >&2
+        return 2
+        ;;
+      *)
+        positional+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  if [[ ${#positional[@]} -eq 0 ]]; then
+    echo "deref: missing operand" >&2
+    echo "Usage: deref [OPTIONS] <PATH...>" >&2
+    return 2
+  fi
+
+  local has_error=0
+  for item in "${positional[@]}"; do
+    if [[ ! -e "$item" && ! -L "$item" ]]; then
+      echo "deref: cannot access '$item': No such file or directory" >&2
+      has_error=1
+      continue
+    fi
+
+    if [[ -L "$item" ]]; then
+      if ! _deref_one "$item" "$verbose"; then
+        has_error=1
+      fi
+      # 若内联后变成了真实目录且开启了 -r，继续处理该目录内部所有软链接
+      if [[ "$recursive" == true && -d "$item" ]]; then
+        while IFS= read -r sublink; do
+          [[ -z "$sublink" ]] && continue
+          if ! _deref_one "$sublink" "$verbose"; then
+            has_error=1
+          fi
+        done < <(find "$item" -type l)
+      fi
+    elif [[ -d "$item" ]]; then
+      if [[ "$recursive" == true ]]; then
+        while IFS= read -r sublink; do
+          [[ -z "$sublink" ]] && continue
+          if ! _deref_one "$sublink" "$verbose"; then
+            has_error=1
+          fi
+        done < <(find "$item" -type l)
+      else
+        echo "deref: '$item' is a directory (use -r to dereference symlinks within)" >&2
+        has_error=1
+      fi
+    else
+      $verbose && echo "deref: '$item' is a regular file (not a symlink), skipped"
+    fi
+  done
+
+  return "$has_error"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  deref_main "$@"
+fi

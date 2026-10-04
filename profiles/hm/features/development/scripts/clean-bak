@@ -1,0 +1,199 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# clean-bak - 清理备份文件与目录 (交互式/强制/递归剪枝防下钻)
+# ==============================================================================
+
+set -e
+
+show_help() {
+  cat <<'EOF'
+Usage: clean-bak [OPTIONS] [DIR...]
+
+Find and clean backup files and directories.
+Defaults to interactive confirmation (-i).
+Supports pruning nested backup paths so subdirectories inside backups are not scanned.
+
+Default matches:
+  - *.bak      (e.g., app.js.bak, .env.bak, file.20231024.bak)
+  - *.bak.*    (e.g., app.js.bak.1, file.bak.old)
+  - .bak       (hidden standalone backup)
+  - .bak.*     (hidden numbered backup)
+
+Options:
+  -i, --interactive    Prompt for confirmation before removing (default)
+  -f, --force          Force removal without prompting
+  -r, --recursive      Recursively scan subdirectories (prunes matching backups)
+  -d, --dry-run        List matching backup items without deleting
+  -p, --pattern PAT    Override match pattern with custom glob
+  -h, --help           Show this help message and exit
+
+Exit Codes:
+  0    Success or cancelled by user
+  1    Deletion error
+  2    Invalid arguments
+EOF
+}
+
+clean_bak_main() {
+  local interactive=true
+  local recursive=false
+  local dry_run=false
+  local custom_pattern=""
+  local dirs=()
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -h|--help)
+        show_help
+        return 0
+        ;;
+      -i|--interactive)
+        interactive=true
+        shift
+        ;;
+      -f|--force)
+        interactive=false
+        shift
+        ;;
+      -r|--recursive)
+        recursive=true
+        shift
+        ;;
+      -d|--dry-run)
+        dry_run=true
+        shift
+        ;;
+      -p|--pattern)
+        if [[ -z "$2" ]]; then
+          echo "clean-bak: option '$1' requires an argument" >&2
+          return 2
+        fi
+        custom_pattern="$2"
+        shift 2
+        ;;
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do
+          dirs+=("$1")
+          shift
+        done
+        break
+        ;;
+      -*)
+        echo "clean-bak: unrecognized option '$1'" >&2
+        echo "Try 'clean-bak --help' for more information." >&2
+        return 2
+        ;;
+      *)
+        dirs+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  if [[ ${#dirs[@]} -eq 0 ]]; then
+    dirs=(".")
+  fi
+
+  local targets=()
+  for base in "${dirs[@]}"; do
+    if [[ ! -d "$base" ]]; then
+      if [[ -e "$base" || -L "$base" ]]; then
+        targets+=("$base")
+      else
+        echo "clean-bak: '$base': No such file or directory" >&2
+      fi
+      continue
+    fi
+
+    while IFS= read -r item; do
+      [[ -n "$item" ]] && targets+=("$item")
+    done < <(
+      if [[ -n "$custom_pattern" ]]; then
+        if [[ "$recursive" == true ]]; then
+          find "$base" -name "$custom_pattern" -prune
+        else
+          find "$base" -mindepth 1 -maxdepth 1 -name "$custom_pattern"
+        fi
+      else
+        if [[ "$recursive" == true ]]; then
+          find "$base" \( \
+            -name "*.bak" -o \
+            -name "*.bak.*" -o \
+            -name ".bak" -o \
+            -name ".bak.*" \
+          \) -prune
+        else
+          find "$base" -mindepth 1 -maxdepth 1 \( \
+            -name "*.bak" -o \
+            -name "*.bak.*" -o \
+            -name ".bak" -o \
+            -name ".bak.*" \
+          \)
+        fi
+      fi
+    )
+  done
+
+  local total="${#targets[@]}"
+  if [[ "$total" -eq 0 ]]; then
+    echo "clean-bak: no backup items found."
+    return 0
+  fi
+
+  echo "Found $total backup item(s):"
+  for item in "${targets[@]}"; do
+    echo "  - $item"
+  done
+
+  if [[ "$dry_run" == true ]]; then
+    echo "[dry-run] No items deleted."
+    return 0
+  fi
+
+  if [[ "$interactive" == true ]]; then
+    printf "Delete these %d backup item(s)? [y/N/each/quit]: " "$total"
+    local answer
+    read -r answer
+    case "$answer" in
+      [yY]|[yY][eE][sS])
+        ;; # 批量确认
+      [eE]|[eE][aA][cC][hH])
+        local del_count=0
+        for item in "${targets[@]}"; do
+          printf "Remove '%s'? [y/N]: " "$item"
+          local single_ans
+          read -r single_ans
+          case "$single_ans" in
+            [yY]|[yY][eE][sS])
+              rm -rf -- "$item"
+              echo "Removed: $item"
+              del_count=$((del_count + 1))
+              ;;
+            *)
+              echo "Skipped: $item"
+              ;;
+          esac
+        done
+        echo "clean-bak: finished. Removed $del_count item(s)."
+        return 0
+        ;;
+      *)
+        echo "clean-bak: aborted by user."
+        return 0
+        ;;
+    esac
+  fi
+
+  local del_count=0
+  for item in "${targets[@]}"; do
+    rm -rf -- "$item"
+    del_count=$((del_count + 1))
+  done
+  echo "clean-bak: successfully removed $del_count item(s)."
+  return 0
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  clean_bak_main "$@"
+fi

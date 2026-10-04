@@ -25,6 +25,7 @@ in
       map f1 launch --stdin-source=@screen_scrollback nvim -R -
       map f2 launch --stdin-source=@last_cmd_output nvim -R -
       allow_remote_control yes
+      listen_on unix:/tmp/kitty
     '';
   };
 }

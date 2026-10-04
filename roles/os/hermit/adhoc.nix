@@ -82,6 +82,7 @@
       "pinta"
       "obs"
       "vlc"
+      "cool-retro-term"
     ];
   };
 }
