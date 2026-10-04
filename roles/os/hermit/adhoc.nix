@@ -53,7 +53,7 @@
       "visual-studio-code"
 
       "motrix-next"
-      "c0re100-qbittorrent"
+      # "qbittorrent"
 
       # IM & audio & remote desktop & meeting
       "telegram"
@@ -82,7 +82,6 @@
       "pinta"
       "obs"
       "vlc"
-      "cool-retro-term"
     ];
   };
 }
