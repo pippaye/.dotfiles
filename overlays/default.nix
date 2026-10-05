@@ -29,11 +29,15 @@ in
     kitty = import ./kitty-darwin-codesign { inherit final prev; };
   };
   # FIXME jetbrains-mono: Failure on dependency with python313Packages.picosvg
+  # FIXME fastmcp: Test suite fails in sandbox / Darwin (timeouts and proxy regex mismatch)
   workaround = (
     final: prev: {
       pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
         (python-final: python-prev: {
           picosvg = python-prev.picosvg.overridePythonAttrs (oldAttrs: {
+            doCheck = false;
+          });
+          fastmcp = python-prev.fastmcp.overridePythonAttrs (oldAttrs: {
             doCheck = false;
           });
         })
