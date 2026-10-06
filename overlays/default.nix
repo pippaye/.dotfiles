@@ -75,4 +75,5 @@ in
     };
   };
   dnsctl = inputs.dnsctl-nix.overlays.default;
+  pi = inputs.pi-agent.overlays.default;
 }

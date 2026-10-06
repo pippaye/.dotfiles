@@ -93,5 +93,6 @@ in
 {
   home.packages = lib.optionals (!cfg.lite) [
     python
+    pkgs.uv
   ];
 }

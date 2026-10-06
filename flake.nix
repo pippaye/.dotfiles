@@ -61,6 +61,10 @@
       url = "github:pippaye/lazydc?shallow=1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    pi-agent = {
+      url = "github:earendil-works/pi?shallow=1";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
   nixConfig = {
     extra-substituters = [
