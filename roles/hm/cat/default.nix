@@ -22,7 +22,6 @@ in
     "${hmProfiles}/features/integration/kdeconnect"
     "${hmProfiles}/features/knowledge"
     "${hmProfiles}/features/llms/codex"
-    "${hmProfiles}/features/llms/gemini"
     "${hmProfiles}/features/networking/mihomo-xdg"
     "${hmProfiles}/features/office/wps.nix"
     "${hmProfiles}/features/remote-desktop/vnc.nix"
