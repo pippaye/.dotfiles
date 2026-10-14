@@ -40,4 +40,13 @@
     ];
     nixosConfig = ./nixos/lime;
   };
+  yuzu = {
+    role = "dog";
+    priUser = "ashenye";
+    tags = [
+      "nixos"
+      "vps"
+    ];
+    nixosConfig = ./nixos/yuzu;
+  };
 }

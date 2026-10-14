@@ -27,4 +27,10 @@ _: {
     sshPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKl8IkGvU1g8lv/r+RtRVXXmtlW0XNac5zQrRgZ3RCij ashenye@lap01-macm4-mume";
     sshConfig = ./ssh-configs/lime.nix;
   };
+  "ashenye@yuzu" = {
+    role = "dog";
+    tags = [ "vps" ];
+    sshPubKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKl8IkGvU1g8lv/r+RtRVXXmtlW0XNac5zQrRgZ3RCij ashenye@lap01-macm4-mume";
+    sshConfig = ./ssh-configs/yuzu.nix;
+  };
 }
