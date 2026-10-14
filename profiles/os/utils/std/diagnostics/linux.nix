@@ -2,7 +2,7 @@
 with pkgs;
 [
   strace
-  ltrace
+  # ltrace
   perf
   sysstat
 ]
