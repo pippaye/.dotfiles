@@ -14,7 +14,6 @@ in
     "${hmProfiles}/features/gaming/minecraft.nix"
     "${hmProfiles}/features/knowledge"
     "${hmProfiles}/features/llms/codex"
-    "${hmProfiles}/features/llms/gemini"
     "${hmProfiles}/features/viewers/mpv"
     # FIX "${hmProfiles}/features/viewers/zathura.nix"
     "${infra}/ssh"

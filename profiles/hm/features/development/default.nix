@@ -37,6 +37,7 @@ in
       pkgs.playwright-mcp
       pkgs.mcp-nixos
       pkgs.nodejs
+      pkgs.pnpm
     ];
   };
 }

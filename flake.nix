@@ -63,6 +63,7 @@
     };
     pi-agent = {
       url = "github:earendil-works/pi?shallow=1";
+      inputs.nixpkgs-darwin-x64.follows = "nixpkgs";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
