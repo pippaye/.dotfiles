@@ -87,6 +87,26 @@
           '';
         };
       };
+      dav = {
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:36065";
+          extraConfig = ''
+            client_max_body_size 0;
+            proxy_buffering off;
+            proxy_request_buffering off;
+
+            # Ensure COPY and MOVE commands work by rewriting the Destination header to
+            # contain only the path, e.g. /test.txt. Note that the captured group already
+            # includes the leading slash: adding another one would produce a Destination
+            # such as //test.txt, which is parsed as a host name and rejected.
+            set $dest $http_destination;
+            if ($http_destination ~ "^https?://[^/]+(?<path>/.*)$") {
+              set $dest $path;
+            }
+            proxy_set_header Destination $dest;
+          '';
+        };
+      };
     };
   };
 }
