@@ -233,6 +233,7 @@ nix flake check --no-build
 
 ```bash
 nix run github:nix-community/nixos-anywhere -- \
+  -i ~/.ssh/id_ed25519 \
   --generate-hardware-config nixos-generate-config \
     ./inventory/hosts/nixos/${HOST_ID}/hardware-configuration.nix \
   --target-host root@${HOST_IP} \
@@ -246,7 +247,44 @@ ssh-keygen -R ${HOST_IP}
 ssh-keyscan -H -t ed25519 ${HOST_IP} >> ~/.ssh/known_hosts
 ```
 
-### kexec 连接中断
+### 5.1 实战血泪教训（Bitter Lessons）与避坑指南
+
+真实 VPS 交付中踩过的坑与核心结论：
+
+#### 1. 严禁省略 `-i <key>`，避免临时密钥销毁导致失联
+`nixos-anywhere` 默认会在本地临时目录生成一套临时密钥并上传。一旦安装过程中任何构建、测试或网络环节异常退出，脚本的 `trap 'rm -rf "$tempDir"' EXIT` 会立刻把本地私钥删除。如果此时目标机已经切换至内存里的 kexec 环境，临时公钥已进入内存，你将被锁死在安装器之外。
+**规则**：必须始终显式传入 `-i ~/.ssh/id_ed25519`。
+
+#### 2. 云厂商非标密钥路径 + `ssh-copy-id` 跳过陷阱（如雨云等）
+- 很多云厂商预装系统（例如 Debian 13 模板）将用户公钥存放在非标准文件（如 `/root/.ssh/authorized_keys_rainyun`），物理文件 `/root/.ssh/authorized_keys` 根本不存在。
+- 此时运行 `nixos-anywhere -i ~/.ssh/id_ed25519` 时，内置的 `ssh-copy-id` 探测到公钥能登录，会直接提示 `WARNING: All keys were skipped because they already exist on the remote system` 并跳过物理文件的写入。
+- 然而 `kexec-run.sh` 脚本在打包内存镜像时，只会死板地扫描 `/root/.ssh/authorized_keys`。由于该文件不存在，打包进内存系统的公钥数量为 0！机器切换到内存系统后直接拒绝任何 SSH 密钥连接。
+- **排雷步骤**：运行 `nixos-anywhere` 前，**必须**在目标现有系统上执行：
+  ```bash
+  ssh root@${HOST_IP} 'install -d -m 0700 /root/.ssh && cat ~/.ssh/id_ed25519.pub >> /root/.ssh/authorized_keys && chmod 0600 /root/.ssh/authorized_keys'
+  ```
+
+#### 3. Cross-Arch（macOS -> Linux）构建中包测试失败
+从 Apple Silicon (`aarch64-darwin`) 部署 x86_64 VPS 时，本地无法直接构建闭包，构建通常会交给远端执行。如果 NixOS 的依赖包（例如 `ltrace` 等诊断包）在上游当前版本的 test suite 存在已知 failure，构建会被直接掐断。
+**处理**：排查并移除有测试缺陷的包，或通过 overlay 给特定包加上 `doCheck = false`。
+
+#### 4. `Connection closed by remote host / Kexec failed` 多数是误报
+kexec 热替换内核瞬间会直接中断当前 SSH 会话。`nixos-anywhere` 经常会打印 `Connection closed by remote host. Kexec failed`，这绝大多数时候**不是失败，而是内核正在重启切入 nixos-installer**！
+**排雷步骤**：
+等待 10~15 秒后先探测：
+```bash
+ssh -i ~/.ssh/id_ed25519 root@${HOST_IP} 'uname -a; cat /etc/os-release'
+```
+如果输出 `ID=nixos`、`VARIANT_ID=installer`，说明已经成功进入内存安装器，直接跳过 kexec 阶段断点续传：
+```bash
+nix run github:nix-community/nixos-anywhere -- \
+  --phases=disko,install,reboot \
+  -i ~/.ssh/id_ed25519 \
+  --target-host root@${HOST_IP} \
+  --flake .#${HOST_ID}
+```
+
+### kexec 连接中断与手动修复
 
 kexec 阶段会主动重启 SSH，短暂断开是正常的。如果工具最终报告 `Kexec failed`，先用目标 root 密码登录临时 `nixos-installer` 环境，安装本机公钥：
 

@@ -42,6 +42,10 @@ Add a new entry to `inventory/hosts/default.nix`:
 ### 0.4 Minimal remote-access checks
 - `configuration.nix` must enable `services.openssh.enable = true;`
 - Ensure your SSH key is authorized for root or a bootstrap user.
+- **[CRITICAL]** Verify physical existence of `/root/.ssh/authorized_keys` on target. Some VPS templates (e.g. RainYun / Debian 13) store keys in `/root/.ssh/authorized_keys_rainyun`, which `kexec-run.sh` will ignore, causing an empty key list in the installer.
+  ```bash
+  ssh root@${HOST_IP} 'install -d -m 0700 /root/.ssh && cat ~/.ssh/id_ed25519.pub >> /root/.ssh/authorized_keys && chmod 0600 /root/.ssh/authorized_keys'
+  ```
 
 ## Stage 1: Remote install (nixos-anywhere)
 
@@ -49,6 +53,7 @@ Run on your local machine from this repo:
 
 ```bash
 nix run github:nix-community/nixos-anywhere -- \
+  -i ~/.ssh/id_ed25519 \
   --generate-hardware-config nixos-generate-config ./inventory/hosts/nixos/${HOST_ID}/hardware-configuration.nix \
   --target-host root@${HOST_IP} \
   --flake .#${HOST_ID}
@@ -56,6 +61,8 @@ nix run github:nix-community/nixos-anywhere -- \
 
 Notes:
 - Replace `${HOST_IP}` and `${HOST_ID}`.
+- **Always pass `-i ~/.ssh/id_ed25519`** to prevent `nixos-anywhere` from generating an ephemeral key that gets deleted on error exit.
+- If kexec disconnects with `Connection closed / Kexec failed`, verify if `nixos-installer` is already booted (`ssh -i ~/.ssh/id_ed25519 root@${HOST_IP} uname -a`). If so, resume via `--phases=disko,install,reboot`.
 - Ensure `disko.nix` is referenced by your host configuration if you use disko.
 
 ## Stage 2: NixOS system config
