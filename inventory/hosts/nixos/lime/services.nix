@@ -66,9 +66,8 @@
     domain = "pippaye.top";
     nginxVirtualHosts = {
       bark.locations."/".proxyPass = "http://127.0.0.1:33080";
-      dying4tokens.locations."/".proxyPass = "http://127.0.0.1:38082";
       miniflux.locations."/".proxyPass = "http://127.0.0.1:38083";
-      cpa = {
+      "cpa.lime" = {
         dnsRecordExt.proxied = false;
         locations."/" = {
           proxyPass = "http://127.0.0.1:38001";
