@@ -22,17 +22,14 @@ users
     }
     // userInfo;
     hostInfo =
-      if builtins.hasAttr userInfoBase.hostname hosts then
-        hosts.${userInfoBase.hostname}
-      else
-        { };
+      if builtins.hasAttr userInfoBase.hostname hosts then hosts.${userInfoBase.hostname} else { };
     system =
-      userInfo.system or (
-        hostInfo.system or (
-          if builtins.elem "darwin" (hostInfo.tags or [ ]) then "aarch64-darwin" else "x86_64-linux"
-        )
+      userInfo.system or (hostInfo.system
+        or (if builtins.elem "darwin" (hostInfo.tags or [ ]) then "aarch64-darwin" else "x86_64-linux")
       );
-    userInfo' = userInfoBase // { inherit system; };
+    userInfo' = userInfoBase // {
+      inherit system;
+    };
     isLinux = lib.strings.hasInfix "linux" system;
     isDarwin = lib.strings.hasInfix "darwin" system;
   in

@@ -4,10 +4,7 @@ let
   scripts =
     builtins.readDir ./.
     |> lib.filterAttrs (
-      name: type:
-      type == "regular"
-      && name != "default.nix"
-      && !(lib.hasPrefix "." name)
+      name: type: type == "regular" && name != "default.nix" && !(lib.hasPrefix "." name)
     );
 in
 {
