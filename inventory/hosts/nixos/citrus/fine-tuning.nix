@@ -1,3 +1,0 @@
-{
-  osProfiles.common.bootloader = "grub";
-}

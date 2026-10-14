@@ -25,52 +25,12 @@
     ];
     darwinConfig = ./darwin/mume;
   };
-  citrus = {
-    role = "dog";
-    tags = [
-      "nixos"
-      "vps"
-    ];
-    alias = [
-      "vps00"
-    ];
-    nixosConfig = ./nixos/citrus;
-  };
-  lemon = {
-    role = "dog";
-    tags = [
-      "nixos"
-      "vps"
-    ];
-    alias = [
-      "vps01"
-    ];
-    nixosConfig = ./nixos/lemon;
-  };
-  yuzu = {
-    role = "dog";
-    tags = [
-      "nixos"
-      "vps"
-    ];
-    alias = [
-      "vps02"
-    ];
-    nixosConfig = ./nixos/yuzu;
-  };
   bambu = {
     role = "dog";
     tags = [
       "nixos"
     ];
     nixosConfig = ./nixos/bambu;
-  };
-  peach = {
-    role = "dog";
-    tags = [
-      "nixos"
-    ];
-    nixosConfig = ./nixos/peach;
   };
   lime = {
     role = "dog";

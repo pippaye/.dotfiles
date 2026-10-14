@@ -2,53 +2,37 @@ keys:
   - hosts:
       - &lan age1xdlmmj7gvvmvpl7n28yv6l9zsrrlazyunesyrzhzy37n59zexepsp4gpxn
       - &mume age18gjva8lxepd4gc5whz73q39xjerphtm6nmfaax9ye9f2dzsj293qgg7xw5
-      - &citrus age1wk2gfxngsx73vcrftevqua0kjhlcpmcyuj55twhng38em38exeksyqhwgc
-      - &yuzu age1mhfrq0rzz69m5t50xmeylp33s46pmva2vtytqlj7v2x3hc5a75jsqen6rf
       - &bambu age1uyr2r6hjsntpd38pnqzt496m2te55ujue2xzh25q8hhpfl33442qsn4h58
-      - &peach age10e9kadcyeqfruje92gxzax3mntxfzzqm6f64frz6hr0ns6c2d3rqu36l7c
   - users:
       - &ashenye_at_lan age18cwlfuth4jpz03u9wzwq5rxxxx50w9e0me9sjqt29dtra0xh33ss7xtfs5 # ashenye@lan
       - &ashenye_at_mume age1se6rw68dnwf6896j8r2v2vjf3kvm5l2x2220epdnm4k2xwzjee7qqj9hl8 # ashenye@mume
-      - &ashenye_at_citrus age1j7p0u6gajhj267j0422k23knmyt9g8ff25aqats6qw4wcl5m85nq4flap8 # ashenye@citrus
-      - &ashenye_at_lemon age1g4l3g9c3vl3x70w6ja3ejtjw7qx0lpugyv9eksrrs8kcvxjmcsys85g4j3 # ashenye@lemon
-      - &ashenye_at_yuzu age1r33ltlgkgyfqujaxvcyuh0vs5twn3wy9rmzcvn0jmzswpz4t9c6qc4xmzg
       - &ashenye_at_bambu age1ewexv87m2u6lmevwnwa0hqdk637ru43yk2zel3cs52r3f7u2r93s662vxu
-      - &ashenye_at_peach age10e9kadcyeqfruje92gxzax3mntxfzzqm6f64frz6hr0ns6c2d3rqu36l7c # ashenye@peach
       - &ashenye_at_lime age1ylwmymkx7vzjw9mx2kuwnjzlkrf7wj54gkj0rg3f9c43lqsd5gustdjxam # ashenye@lime
 creation_rules:
   - path_regex: ^secrets/default\.yaml$
     key_groups:
       - age:
           - *lan
-          - *peach
           - *mume
           - *ashenye_at_lan
           - *ashenye_at_mume
-          - *ashenye_at_peach
           - *ashenye_at_lime
   - path_regex: ^secrets/zju\.yaml$
     key_groups:
       - age:
           - *lan
-          - *peach
           - *mume
           - *ashenye_at_lan
-          - *ashenye_at_peach
           - *ashenye_at_mume
   - path_regex: ^secrets/api-tokens\.yaml$
     key_groups:
       - age:
           - *lan
-          - *peach
           - *mume
           - *bambu
           - *ashenye_at_lan
           - *ashenye_at_mume
           - *ashenye_at_bambu
-          - *ashenye_at_citrus
-          - *ashenye_at_lemon
-          - *ashenye_at_yuzu
-          - *ashenye_at_peach
           - *ashenye_at_lime
   - path_regex: ^secrets/mihomo\.yaml$
     key_groups:
@@ -56,21 +40,15 @@ creation_rules:
           - *lan
           - *mume
           - *bambu
-          - *peach
   - path_regex: ^secrets/infra\.yaml$
     key_groups:
       - age:
           - *lan
           - *mume
           - *bambu
-          - *peach
           - *ashenye_at_lan
           - *ashenye_at_mume
   - path_regex: ^secrets/per-host/bambu/.*\.yaml$
     key_groups:
       - age:
           - *bambu
-  - path_regex: ^secrets/per-host/peach/.*\.yaml$
-    key_groups:
-      - age:
-          - *peach

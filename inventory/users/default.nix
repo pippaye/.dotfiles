@@ -21,28 +21,6 @@ _: {
     sshConfig = ./ssh-configs/bambu.nix;
     hmConfig = ./home-manager/bambu.nix;
   };
-  "ashenye@citrus" = {
-    role = "dog";
-    tags = [ "vps" ];
-    sshConfig = ./ssh-configs/citrus.nix;
-  };
-  "ashenye@lemon" = {
-    role = "dog";
-    tags = [ "vps" ];
-    sshConfig = ./ssh-configs/lemon.nix;
-  };
-  "ashenye@yuzu" = {
-    role = "dog";
-    tags = [ "vps" ];
-    sshConfig = ./ssh-configs/yuzu.nix;
-  };
-  "ashenye@peach" = {
-    role = "dog";
-    tags = [ "daily" ];
-    sshPubKey = "";
-    hmConfig = ./home-manager/peach.nix;
-    sshConfig = ./ssh-configs/peach.nix;
-  };
   "ashenye@lime" = {
     role = "dog";
     tags = [ "vps" ];
