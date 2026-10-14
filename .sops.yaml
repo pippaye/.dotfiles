@@ -8,6 +8,7 @@ keys:
       - &ashenye_at_mume age1se6rw68dnwf6896j8r2v2vjf3kvm5l2x2220epdnm4k2xwzjee7qqj9hl8 # ashenye@mume
       - &ashenye_at_bambu age1ewexv87m2u6lmevwnwa0hqdk637ru43yk2zel3cs52r3f7u2r93s662vxu
       - &ashenye_at_lime age1ylwmymkx7vzjw9mx2kuwnjzlkrf7wj54gkj0rg3f9c43lqsd5gustdjxam # ashenye@lime
+      - &ashenye_at_yuzu age15kt054su2ag8ktm9qq7trxu8mv62uwd5c8urs4p9h3sn5us9tcvqyuparr # ashenye@yuzu
 creation_rules:
   - path_regex: ^secrets/default\.yaml$
     key_groups:
@@ -17,6 +18,7 @@ creation_rules:
           - *ashenye_at_lan
           - *ashenye_at_mume
           - *ashenye_at_lime
+          - *ashenye_at_yuzu
   - path_regex: ^secrets/zju\.yaml$
     key_groups:
       - age:
@@ -34,6 +36,7 @@ creation_rules:
           - *ashenye_at_mume
           - *ashenye_at_bambu
           - *ashenye_at_lime
+          - *ashenye_at_yuzu
   - path_regex: ^secrets/mihomo\.yaml$
     key_groups:
       - age:
