@@ -3,6 +3,11 @@
   virtualisation.docker.enable = true;
   users.users.ashenye.extraGroups = [ "docker" ];
 
+  # Secret files are created directly on yuzu and must be readable by sing-box:
+  # /var/lib/sing-box/ss-password (base64 of 16 random bytes).
+  # Shadowsocks-2022 is used instead of VLESS-Reality because it carries no SNI,
+  # so airport relays that sniff SNI and rewrite destinations (dialer-proxy
+  # chains) cannot hijack the connection.
   services.sing-box = {
     enable = true;
     settings = {
@@ -13,35 +18,13 @@
 
       inbounds = [
         {
-          type = "vless";
-          tag = "vless-reality";
+          type = "shadowsocks";
+          tag = "ss-2022";
           listen = "::";
           listen_port = 38443;
-
-          users = [
-            {
-              name = "ashenye";
-              uuid = {
-                _secret = "/var/lib/sing-box/uuid";
-              };
-              flow = "xtls-rprx-vision";
-            }
-          ];
-
-          tls = {
-            enabled = true;
-            server_name = "www.cloudflare.com";
-            reality = {
-              enabled = true;
-              handshake = {
-                server = "www.cloudflare.com";
-                server_port = 443;
-              };
-              private_key = {
-                _secret = "/var/lib/sing-box/reality-private-key";
-              };
-              short_id = [ "175635b801b89bc6" ];
-            };
+          method = "2022-blake3-aes-128-gcm";
+          password = {
+            _secret = "/var/lib/sing-box/ss-password";
           };
         }
       ];
