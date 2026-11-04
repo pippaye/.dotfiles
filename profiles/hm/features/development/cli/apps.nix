@@ -34,6 +34,9 @@ in
         libavif
         glow
         ast-grep
+        gh
+        tmux
+        texliveFull
       ]);
   };
 }
