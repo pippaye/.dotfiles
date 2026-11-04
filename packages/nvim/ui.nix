@@ -1,20 +1,43 @@
-_: {
+let
+  inherit (import ./helpers.nix) bind;
+in
+{
+  plugins.which-key.enable = true;
+
+  plugins.undotree = {
+    enable = true;
+    settings = {
+      autoOpenDiff = true;
+      focusOnToggle = true;
+    };
+  };
+
+  plugins.markdown-preview = {
+    enable = true;
+    settings = {
+      browser = "zen";
+      echo_preview_url = 1;
+      port = "6969";
+      preview_options = {
+        disable_filename = 1;
+        disable_sync_scroll = 1;
+        sync_scroll_type = "middle";
+      };
+      theme = "dark";
+    };
+  };
+
+  keymaps = [
+    (bind "n" "<leader>ut" "<cmd>UndotreeToggle<CR>" "Undotree")
+    (bind "n" "<leader>mp" "<cmd>MarkdownPreview<cr>" "Toggle Markdown Preview")
+  ];
+
   plugins.lualine = {
     enable = true;
     settings = {
       options = {
         globalstatus = true;
-        extensions = [
-          "fzf"
-          "neo-tree"
-        ];
-        disabledFiletypes = {
-          statusline = [
-            "startup"
-            "alpha"
-          ];
-        };
-        theme = "catppuccin";
+        theme = "catppuccin-nvim"; # 跟随 catppuccin 当前 flavour
       };
       sections = {
         lualine_a = [

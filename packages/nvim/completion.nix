@@ -1,8 +1,6 @@
-{ lib, ... }:
 {
-  # blink.cmp - 用 Rust 编写的超快补全引擎
-  # 性能比 nvim-cmp 快 10-20 倍
-  # 参考：https://github.com/Saghen/blink.cmp
+  # blink.cmp：补全 + snippet（读取 ./snippets 下的 VSCode 格式片段）
+  # https://github.com/Saghen/blink.cmp
 
   plugins.blink-cmp = {
     enable = true;
@@ -95,8 +93,7 @@
             enabled = true;
             score_offset = 80;
             opts = {
-              friendly_snippets = true;
-              search_paths = [ (builtins.toString ./../../snippets) ];
+              search_paths = [ "${./snippets}" ];
               global_snippets = [ "all" ];
               extended_filetypes = { };
               ignored_filetypes = [ ];
@@ -212,13 +209,4 @@
       };
     };
   };
-
-  # 禁用旧的 nvim-cmp 相关插件
-  plugins.cmp.enable = lib.mkForce false;
-  plugins.cmp-nvim-lsp.enable = lib.mkForce false;
-  plugins.cmp-buffer.enable = lib.mkForce false;
-  plugins.cmp-path.enable = lib.mkForce false;
-  plugins.cmp_luasnip.enable = lib.mkForce false;
-  plugins.cmp-cmdline.enable = lib.mkForce false;
-  plugins.cmp-emoji.enable = lib.mkForce false;
 }
