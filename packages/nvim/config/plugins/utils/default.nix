@@ -5,6 +5,5 @@
     ./markdown-preview.nix
     ./whichkey.nix
     ./toggleterm.nix
-    ./comment.nix
   ];
 }
