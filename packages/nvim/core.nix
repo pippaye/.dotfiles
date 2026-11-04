@@ -17,7 +17,13 @@ in
 {
   globals.mapleader = " ";
 
-  clipboard.providers.wl-copy.enable = pkgs.stdenv.hostPlatform.isLinux;
+  # 剩贴板见 lua/clipboard.lua（统一 OSC 52，不再使用 wl-copy）
+  # 放在 Pre 里：必须在第一次使用剩贴板之前设置 g:clipboard
+  extraConfigLuaPre = ''
+    do
+    ${builtins.readFile ./lua/clipboard.lua}
+    end
+  '';
 
   opts = {
     number = true;

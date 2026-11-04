@@ -12,24 +12,8 @@ in
     };
   };
 
-  plugins.markdown-preview = {
-    enable = true;
-    settings = {
-      browser = "zen";
-      echo_preview_url = 1;
-      port = "6969";
-      preview_options = {
-        disable_filename = 1;
-        disable_sync_scroll = 1;
-        sync_scroll_type = "middle";
-      };
-      theme = "dark";
-    };
-  };
-
   keymaps = [
     (bind "n" "<leader>ut" "<cmd>UndotreeToggle<CR>" "Undotree")
-    (bind "n" "<leader>mp" "<cmd>MarkdownPreview<cr>" "Toggle Markdown Preview")
   ];
 
   plugins.lualine = {

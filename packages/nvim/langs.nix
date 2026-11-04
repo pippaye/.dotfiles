@@ -62,7 +62,9 @@
     beancount = "beancount";
   };
 
-  # Rust：rust-analyzer 由 rustaceanvim 管理（可执行文件来自项目环境）
+  # Rust：rust-analyzer 由 rustaceanvim 管理，可执行文件只用项目环境里的。
+  # nixvim 默认会自带一份并放在 PATH 最前面，覆盖掉项目 devshell 里与工具链匹配的版本。
+  dependencies.rust-analyzer.enable = false;
   plugins.rustaceanvim = {
     enable = true;
     settings = {

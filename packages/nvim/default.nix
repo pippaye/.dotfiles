@@ -16,7 +16,7 @@ nixvim.makeNixvimWithModule {
       ./editor.nix # 主题、treesitter、telescope、mini.nvim
     ]
     ++ lib.optionals (!lite) [
-      ./ui.nix # lualine、which-key、undotree、markdown-preview
+      ./ui.nix # lualine、which-key、undotree
       ./completion.nix # blink.cmp
       ./lsp.nix # LSP 通用设置 + conform
       ./langs.nix # 各语言的 LSP 与格式化工具
@@ -24,30 +24,117 @@ nixvim.makeNixvimWithModule {
       ./git.nix # gitsigns、lazygit
     ];
 
+    # treesitter 语法（不用 allGrammars：300+ 种、约 260 MiB）
+    # 未列出的语言会退回 Vim 自带的正则高亮；lua/vim/vimdoc/markdown 等 Neovim 本身已内置
     plugins.treesitter.grammarPackages =
       with pkgs.vimPlugins.nvim-treesitter.builtGrammars;
-      if lite then
-        # lite：只保留配置文件类语言
+      # lite + full
+      # Shell / 系统
+      [
+        bash
+        zsh
+        awk
+        ssh_config
+        kitty
+        nginx
+        kconfig
+      ]
+      # 配置 / 数据
+      ++ [
+        json
+        json5
+        jsonnet
+        yaml
+        toml
+        ini
+        csv
+        kdl
+        jq
+        http
+        proto
+        graphql
+        helm
+        mermaid
+        xml
+      ]
+      # 仅 full
+      ++ lib.optionals (!lite) (
+        # Git
         [
-          bash
-          comment
-          diff
           git_config
-          ini
-          json
-          lua
-          markdown
-          markdown_inline
+          git_rebase
+          gitattributes
+          gitcommit
+          gitignore
+          diff
+        ]
+        # Nix / 构建
+        ++ [
           nix
-          regex
-          toml
+          just
+          cmake
+          meson
+          ninja
+          dockerfile
+        ]
+        # C 家族 / 底层
+        ++ [
+          c
+          cpp
+          objc
+          cuda
+          glsl
+          hlsl
+          llvm
+          mlir
+          objdump
+        ]
+        # Rust / Go
+        ++ [
+          rust
+          go
+          gomod
+          gosum
+          gotmpl
+          gowork
+        ]
+        # Python / Lua / Vim
+        ++ [
+          python
+          lua
+          luadoc
+          luap
           vim
           vimdoc
-          xml
-          yaml
+          regex
+          comment
         ]
-      else
-        pkgs.vimPlugins.nvim-treesitter.allGrammars;
+        # Web
+        ++ [
+          html
+          css
+          scss
+          javascript
+          jsdoc
+          typescript
+          tsx
+          vue
+          astro
+          php
+        ]
+        # 其他
+        ++ [
+          markdown
+          markdown_inline
+          sql
+          java
+          javadoc
+          haskell
+          slint
+          typespec
+          beancount
+        ]
+      );
 
     performance.byteCompileLua.enable = true;
 

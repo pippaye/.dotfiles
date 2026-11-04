@@ -1,6 +1,15 @@
 { lib, ... }:
 let
   inherit (import ./helpers.nix) bind bindLua;
+
+  # 大文件（> 1 MiB）不启用 treesitter：解析耗时和内存随文件线性增长
+  # （实测 29 MiB JSON：解析 2.4 s、内存 59 → 725 MiB），退回 Vim 自带的正则高亮
+  isBigFile = ''
+    function(_, buf)
+      local stat = vim.uv.fs_stat(vim.api.nvim_buf_get_name(buf))
+      return stat ~= nil and stat.size > 1024 * 1024
+    end
+  '';
 in
 {
   colorschemes.catppuccin = {
@@ -24,9 +33,14 @@ in
   # 语法包在 default.nix 里按 lite/full 选择
   plugins.treesitter = {
     enable = true;
-    settings = {
-      highlight.enable = true;
-      indent.enable = true;
+    # nvim-treesitter main 分支：高亮/缩进由 nixvim 在 FileType 时启动（settings.* 只给旧 master 分支用）
+    highlight = {
+      enable = true;
+      disable.__raw = isBigFile;
+    };
+    indent = {
+      enable = true;
+      disable.__raw = isBigFile;
     };
   };
 
