@@ -8,6 +8,20 @@ vim.api.nvim_create_autocmd("TextYankPost", {
   end,
 })
 
+-- 录宏时临时显示命令行：cmdheight=0 时没有地方显示 "recording @q" 提示
+vim.api.nvim_create_autocmd("RecordingEnter", {
+  group = group,
+  callback = function()
+    vim.o.cmdheight = 1
+  end,
+})
+vim.api.nvim_create_autocmd("RecordingLeave", {
+  group = group,
+  callback = function()
+    vim.o.cmdheight = 0
+  end,
+})
+
 -- 帮助页面不显示 mini.indentscope 竖线
 vim.api.nvim_create_autocmd("FileType", {
   group = group,
