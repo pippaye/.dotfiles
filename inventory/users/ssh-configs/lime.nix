@@ -1,6 +1,6 @@
 {
   programs.ssh.settings."lime" = {
-    hostname = "210.121.44.78";
+    hostname = "210.121.44.79";
     user = "ashenye";
     port = 2222;
     serverAliveInterval = 60;
