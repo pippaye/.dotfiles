@@ -138,7 +138,7 @@ nixvim.makeNixvimWithModule {
 
     performance.byteCompileLua.enable = true;
 
-    # 剪贴板统一走 OSC 52（lua/clipboard.lua），不需要 wl-clipboard。
+    # 不让 nvim 自带 wl-clipboard：SSH 下剪贴板走 OSC 52；Linux 桌面本机用桌面 profile 装进 PATH 的 wl-clipboard。
     # nixpkgs 的 Neovim 包装在 Linux 上默认会把它加进 PATH，连带 xdg-utils/perl/systemd/glib（lite 约 +144 MiB）
     waylandSupport = false;
 

@@ -17,8 +17,8 @@ in
 {
   globals.mapleader = " ";
 
-  # 剩贴板见 lua/clipboard.lua（统一 OSC 52，不再使用 wl-copy）
-  # 放在 Pre 里：必须在第一次使用剩贴板之前设置 g:clipboard
+  # 剪贴板见 lua/clipboard.lua（本机用系统工具，SSH 下用 OSC 52）
+  # 放在 Pre 里：必须在第一次使用剪贴板之前设置 g:clipboard
   extraConfigLuaPre = ''
     do
     ${builtins.readFile ./lua/clipboard.lua}
