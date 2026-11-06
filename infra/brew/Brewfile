@@ -1,0 +1,28 @@
+# Taps
+tap "AnInsomniacy/motrix-next"
+tap "chen08209/tap"
+
+# Brews
+brew "mas"
+brew "openssl@3"
+
+# Casks
+cask "firefox"
+cask "google-chrome"
+cask "visual-studio-code"
+cask "motrix-next", postinstall: "/usr/bin/xattr -cr '/Applications/MotrixNext.app'"
+cask "flclash"
+cask "telegram"
+cask "discord"
+cask "stats"
+cask "wireshark-app"
+cask "obsidian"
+cask "typora"
+cask "drawio"
+cask "zotero"
+cask "gimp"
+cask "codex"
+cask "claude-code"
+cask "pinta"
+cask "obs"
+cask "vlc"

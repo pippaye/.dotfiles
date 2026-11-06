@@ -10,6 +10,9 @@ deploy-both: deploy-nixos deploy-home
 deploy-darwin:
     sudo darwin-rebuild switch
 
+deploy-brew:
+    brew bundle --file=infra/brew/Brewfile --zap
+
 
 update-flake:
     nix flake update
