@@ -11,7 +11,7 @@ in
     "${infra}/dnsctl"
   ];
 
-  services.qemu-guest-agent.enable = true;
+  services.qemuGuest.enable = true;
 
   boot.kernelParams = [
     "console=ttyS0,115200n8"
