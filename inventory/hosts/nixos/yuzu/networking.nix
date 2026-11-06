@@ -13,7 +13,7 @@
     usePredictableInterfaceNames = true;
     interfaces.ens18.ipv4.addresses = [
       {
-        address = "38.246.237.114";
+        address = "38.246.237.110";
         prefixLength = 25;
       }
     ];
