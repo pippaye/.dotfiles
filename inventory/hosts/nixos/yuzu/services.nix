@@ -46,6 +46,44 @@
     ipv4 = "38.246.237.114";
     domain = "pippaye.top";
     nginxVirtualHosts = {
+      "magpie-web.yuzu" = {
+        dnsRecordExt.proxied = false;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:33430";
+          extraConfig = ''
+            proxy_buffering off;
+            proxy_cache off;
+
+            proxy_read_timeout 600s;
+            proxy_send_timeout 600s;
+            proxy_connect_timeout 60s;
+
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            proxy_set_header X-Accel-Buffering "no";
+            chunked_transfer_encoding on;
+          '';
+        };
+      };
+      "magpie.yuzu" = {
+        dnsRecordExt.proxied = false;
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:33425";
+          extraConfig = ''
+            proxy_buffering off;
+            proxy_cache off;
+
+            proxy_read_timeout 600s;
+            proxy_send_timeout 600s;
+            proxy_connect_timeout 60s;
+
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            proxy_set_header X-Accel-Buffering "no";
+            chunked_transfer_encoding on;
+          '';
+        };
+      };
       "cpa.yuzu" = {
         dnsRecordExt.proxied = false;
         locations."/" = {
